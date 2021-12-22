@@ -1,50 +1,82 @@
 '''
-Rules for one-pass alignment methods including grc, major and personalized.
-
-grc and major are straightforward one-pass alignments, but the personalized
-alignment method all are aligned to both hapA and hapB, and a merging step
-is performed to generate the "best" outputs.
+Rules for alignment jobs.
 
 Checkpoint:
-    temp(os.path.join(DIR, 'standard_onepass.done'))
+    temp(os.path.join(DIR, 'alignment.done'))
 '''
-rule align_to_source:
+rule bt2_align_to_source:
     input:
         reads1 = PREFIX_PER + '_1.fq',
         reads2 = PREFIX_PER + '_2.fq',
         idx = expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_source.{i}.bt2'), i = IDX_ITEMS)
+            DIR_IDX, 'chr{}'.format(CHROM) + '_source.{i}.bt2'), i = BT2_IDX_ITEMS)
     params:
         DIR_IDX + 'chr{}_source'.format(CHROM)
     output:
-        sam = os.path.join(DIR_FIRST_PASS, 'chr{}-source.bam'.format(CHROM))
+        os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-source.bam'.format(CHROM))
     threads: THREADS
     shell:
         '{BOWTIE2} --threads {threads} -x {params} -1 {input.reads1} -2 {input.reads2} | '
-        '{SAMTOOLS} view -hb -o {output.sam}'
+        '{SAMTOOLS} view -hb -o {output}'
 
-rule align_to_target:
+rule bwa_align_to_source:
     input:
         reads1 = PREFIX_PER + '_1.fq',
         reads2 = PREFIX_PER + '_2.fq',
         idx = expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_target.{i}.bt2'), i = IDX_ITEMS)
+            DIR_IDX, 'chr{}'.format(CHROM) + '_source.{i}'), i = BWA_IDX_ITEMS)
+    params:
+        DIR_IDX + 'chr{}_source'.format(CHROM)
+    output:
+        os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-source.bam'.format(CHROM))
+    threads: THREADS
+    shell:
+        '{BWA} mem -t {threads} {params} {input.reads1} {input.reads2} | '
+        '{SAMTOOLS} view -hb -o {output}'
+
+rule bt2_align_to_target:
+    input:
+        reads1 = PREFIX_PER + '_1.fq',
+        reads2 = PREFIX_PER + '_2.fq',
+        idx = expand(os.path.join(
+            DIR_IDX, 'chr{}'.format(CHROM) + '_target.{i}.bt2'), i = BT2_IDX_ITEMS)
     params:
         DIR_IDX + 'chr{}_target'.format(CHROM)
     output:
-        sam = os.path.join(DIR_FIRST_PASS, 'chr{}-target.bam'.format(CHROM))
+        os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-target.bam'.format(CHROM))
     threads: THREADS
     shell:
         '{BOWTIE2} --threads {threads} -x {params} -1 {input.reads1} -2 {input.reads2} | '
-        '{SAMTOOLS} view -hb -o {output.sam}'
+        '{SAMTOOLS} view -hb -o {output}'
+
+rule bwa_align_to_target:
+    input:
+        reads1 = PREFIX_PER + '_1.fq',
+        reads2 = PREFIX_PER + '_2.fq',
+        idx = expand(os.path.join(
+            DIR_IDX, 'chr{}'.format(CHROM) + '_target.{i}'), i = BWA_IDX_ITEMS)
+    params:
+        DIR_IDX + 'chr{}_target'.format(CHROM)
+    output:
+        os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-target.bam'.format(CHROM))
+    threads: THREADS
+    shell:
+        '{BWA} mem -t {threads} {params} {input.reads1} {input.reads2} | '
+        '{SAMTOOLS} view -hb -o {output}'
 
 rule check_standard_onepass:
     input:
         expand(
-            os.path.join(DIR_FIRST_PASS, 'chr{}-source.bam'.format(CHROM)),
+            os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-source.bam'.format(CHROM)),
             INDIV = INDIV),
         expand(
-            os.path.join(DIR_FIRST_PASS, 'chr{}-target.bam'.format(CHROM)),
+            os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-target.bam'.format(CHROM)),
+            INDIV = INDIV),
+        expand(
+            os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-source.bam'.format(CHROM)),
+            INDIV = INDIV),
+        expand(
+            os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-target.bam'.format(CHROM)),
             INDIV = INDIV),
         # samA = expand(
         #     os.path.join(DIR_FIRST_PASS, 'chr{}-per-merged-hapA.sam'.format(CHROM)),

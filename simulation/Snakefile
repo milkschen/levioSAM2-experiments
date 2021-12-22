@@ -59,7 +59,8 @@ DIR_FIRST_PASS = os.path.join(DIR, 'experiments/{INDIV}/')
 DIR_RESULTS = os.path.join(DIR, 'results/')
 DIR_RESULTS_BIAS = os.path.join(DIR, 'results/bias/')
 
-IDX_ITEMS = ['1', '2', '3', '4', 'rev.1', 'rev.2']
+BT2_IDX_ITEMS = ['1', '2', '3', '4', 'rev.1', 'rev.2']
+BWA_IDX_ITEMS = ['amb', 'bwt', 'sa', 'ann', 'pac']
 
 ''' Included rules '''
 #: Functions needed in the pipeline
