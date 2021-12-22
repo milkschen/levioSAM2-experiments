@@ -1,0 +1,42 @@
+CHROM : '21'
+INDIV : ['NA12878']
+# INDIV : ['HG03028', 'NA20528', 'HG01939', 'HG02660', 'NA20281', 'NA19461']
+# INDIV : ['HG00632', 'NA20534', 'HG00331', 'HG04180', 'NA18617']
+# INDIV : ['HG03028', 'NA20528', 'HG01939', 'HG02660', 'NA20281', 'HG00704', 'HG00551', 'HG02025', 'HG02151', 'HG02128', 'NA19774', 'HG01177', 'HG00097', 'HG04189', 'HG01918', 'HG03499', 'HG02224', 'NA19235', 'NA19118', 'NA19661', 'HG01198', 'NA12003', 'HG03096', 'HG02727', 'HG01979', 'HG01619', 'NA21127', 'HG03741', 'NA20802', 'HG02079', 'HG01951', 'NA18637', 'HG02771', 'HG03898', 'HG02122', 'HG03757', 'HG03950', 'HG02635', 'NA18602', 'NA18517', 'HG00671', 'NA12830', 'NA19904', 'NA19149', 'HG04153', 'HG03081', 'NA20758', 'HG01094', 'NA18915', 'NA20801', 'NA21135', 'HG00266', 'NA18631', 'HG03895', 'NA20274', 'NA20525', 'HG02407', 'HG01920', 'HG00533', 'HG02105', 'NA19663', 'HG03162', 'HG01495', 'HG02813', 'HG03202', 'NA19308', 'NA18559', 'NA19350', 'NA19461', 'HG01072', 'HG03965', 'HG01519', 'HG02703', 'NA19723', 'HG02521', 'NA20775', 'HG03796', 'HG02322', 'HG00154', 'NA12546', 'HG00155', 'HG02819', 'NA18858', 'HG01869', 'NA19005', 'NA19320', 'HG04063', 'HG01600', 'HG03391', 'HG00336', 'HG02282', 'HG03925', 'NA12751', 'NA20518', 'HG03449', 'HG04219', 'NA12340', 'HG00240', 'NA18623', 'NA18582']
+# GROUP : ['afr', 'ami', 'amr', 'asj', 'eas', 'fin', 'nfe', 'sas']
+GROUP : ['EUR', 'AMR', 'EAS', 'SAS', 'AFR']
+NUM_SIM_READS : 100000
+ALN_MAPQ_THRSD : '10'
+
+# EXP_TYPES : ['grc', 'major-1kg', 'per', 'rf-1kg']
+
+BIAS_MIN_READ_COUNT : 2
+#: A HET site with
+#: "ref/(ref+alt) >= 0.5 + BIAS_TAIL_THRDS" /
+#: "ref/(ref+alt) <= 0.5 - BIAS_TAIL_THRDS"
+#: will be defined as strongly biased toward ref/alt
+BIAS_TAIL_THRDS : 0.3
+
+DIR: '/home/cnaechy1/scr16_blangme2/naechyun/leviosam_exp/simulation_chr21'
+SIMULATION_REF : '/home/cnaechy1/data_blangme2/fasta/grch38/chr21.fa'
+TARGET_REF : '/home/cnaechy1/data_blangme2/fasta/grch38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna'
+SOURCE_REF : '/home/cnaechy1/data_blangme2/fasta/chm13_v1.1-hg2Y/chm13.v1.1-hg002_Y.fasta'
+PHASED_VCF : '/home/cnaechy1/data_blangme2/1000gnomes/20201028_3202_phased/CCDG_14151_B01_GRM_WGS_2020-08-05_chr21.filtered.shapeit2-duohmm-phased.vcf.gz'
+FAMILY : '/home/cnaechy1/data_blangme2/naechyun/reference_flow/resources/20130606_g1k.ped'
+SPOP : '/home/cnaechy1/data_blangme2/naechyun/reference_flow/resources/1kg.superpopulation'
+LENGTH_MAP : '/home/cnaechy1/data_blangme2/naechyun/reference_flow/resources/GRCh38.length_map'
+CHROM_MAP : '/home/cnaechy1/data_blangme2/naechyun/reference_flow/resources/GRCh38.chrom_map'
+
+BOWTIE2 : '/home/cnaechy1/miniconda3/bin/bowtie2'
+BWA: '/home/cnaechy1/miniconda3/bin/bwa'
+BCFTOOLS : '/home/cnaechy1/bin/bcftools'
+SAMTOOLS : '/home/cnaechy1/miniconda3/bin/samtools'
+MASON2 : '/home/cnaechy1/data_blangme2/naechyun/software/mason2-2.0.9-Linux-x86_64/bin/mason_simulator'
+LIFTOVER : '/home/cnaechy1/data_blangme2/naechyun/levioSAM/1210/leviosam'
+PYTHON : '/home/cnaechy1/miniconda3/bin/python'
+DIR_SCRIPTS : '/home/cnaechy1/data_blangme2/naechyun/reference_flow-experiments/scripts'
+
+TIME : '/home/cnaechy1/data_blangme2/naechyun/software/time-1.9/time'
+THREADS : 16
+MAX_SYSTEM_THREADS : 48
+RAND_SEED : 0

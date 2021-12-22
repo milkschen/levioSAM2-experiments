@@ -2,10 +2,7 @@
 import os
 import pandas as pd
 
-# configfile: "hg38_deep_NA12878.yaml"
-# configfile: "hg38_deep.yaml"
 configfile: "hg38_1kg.yaml"
-# configfile: "hg38.yaml"
 
 ''' Load from config '''
 CHROM = config['CHROM']
@@ -13,25 +10,23 @@ INDIV = config['INDIV']
 GROUP = config['GROUP']
 NUM_SIM_READS = config['NUM_SIM_READS']
 ALN_MAPQ_THRSD = config['ALN_MAPQ_THRSD']
-# EXP_TYPES = config['EXP_TYPES']
-# POP_THRSD = config['POP_THRSD']
-# POP_STOCHASTIC = config['POP_STOCHASTIC']
-# POP_BLOCK_SIZE = config['POP_BLOCK_SIZE']
-# POP_USE_LD = config['POP_USE_LD']
 BIAS_MIN_READ_COUNT = config['BIAS_MIN_READ_COUNT']
 BIAS_TAIL_THRDS = config['BIAS_TAIL_THRDS']
 
 #: paths
 DIR = config['DIR']
-GENOME = config['GENOME']
+SIMULATION_REF = config['SIMULATION_REF']
+SOURCE_REF = config['SOURCE_REF']
+TARGET_REF = config['TARGET_REF']
 PHASED_VCF = config['PHASED_VCF']
-# UNPHASED_VCF = config['UNPHASED_VCF']
 FAMILY = config['FAMILY']
 SPOP = config['SPOP']
 LENGTH_MAP = config['LENGTH_MAP']
 CHROM_MAP = config['CHROM_MAP']
 
 #: path of tools used
+BOWTIE2 = config['BOWTIE2']
+BWA = config['BWA']
 BCFTOOLS = config['BCFTOOLS']
 SAMTOOLS = config['SAMTOOLS']
 MASON2 = config['MASON2']
@@ -46,42 +41,21 @@ MAX_SYSTEM_THREADS = config['MAX_SYSTEM_THREADS']
 RAND_SEED = config['RAND_SEED']
 ''''''
 
-# UNPHASED_VCF_F = os.path.join(DIR, CHROM + '_unphased_filt_biallelic.vcf')
-#DICT_GNOMAD_POP_SIZE = {
-#    'all': 71702*2, 'afr': 21042*2, 'ami': 450*2, 'amr': 6835*2, 'asj': 1662*2,
-#    'eas': 1567*2, 'fin': 5244*2, 'nfe': 32299*2, 'sas': 1526*2, 'oth': 1077*2}
 PHASED_VCF_F = os.path.join(DIR, CHROM + '_phased_filt.vcf')
 
-PREFIX_MAJOR_F = os.path.join(DIR, 'major/chr' + CHROM + '-filtered_major')
-PREFIX_MAJOR = os.path.join(DIR, 'major/chr' + CHROM + '-major')
-PREFIX_MAJOR_IDX = os.path.join(DIR, 'major/indexes/chr' + CHROM + '-major')
-DIR_MAJOR = os.path.join(DIR, 'major/')
+# PREFIX_MAJOR_F = os.path.join(DIR, 'major/chr' + CHROM + '-filtered_major')
+# PREFIX_MAJOR = os.path.join(DIR, 'major/chr' + CHROM + '-major')
+# PREFIX_MAJOR_IDX = os.path.join(DIR, 'major/indexes/chr' + CHROM + '-major')
+# DIR_MAJOR = os.path.join(DIR, 'major/')
 
 # DIR_GRC = os.path.join(DIR, 'grc/')
-DIR_GRC_IDX = os.path.join(DIR, 'grc/indexes/')
+DIR_IDX = os.path.join(DIR, 'indexes/')
 
 DIR_PER = os.path.join(DIR, 'simulation/{INDIV}/')
 DIR_PER_IDX = os.path.join(DIR, 'simulation/{INDIV}/indexes/')
 PREFIX_PER = os.path.join(DIR, 'simulation/{INDIV}/' + 'chr{}-per'.format(CHROM))
 
-# DIR_VG = os.path.join(DIR, 'vg/')
-# DIR_VG_TMP = os.path.join(DIR, 'vg/tmp/')
-
-# DIR_POP_GENOME = os.path.join(DIR, 'pop_genome/')
-# POP_DIRNAME = 'thrds{0}_S{1}_b{2}_ld{3}'.format(POP_THRSD, POP_STOCHASTIC, POP_BLOCK_SIZE, POP_USE_LD)
-# # POP_DIRNAME = 'thrds{0}_S{1}_block{2}_ld{3}'.format(POP_THRSD, POP_STOCHASTIC, POP_BLOCK_SIZE, POP_USE_LD)
-# POP_GENOME_SUFFIX = \
-#     'chr' + CHROM + '_superpop_{GROUP}_thrds' + str(POP_THRSD) + \
-#     '_S' + str(POP_STOCHASTIC) + '_b' + str(POP_BLOCK_SIZE) + \
-#     '_ld' + str(POP_USE_LD)
-# DIR_POP_GENOME_BLOCK = os.path.join(DIR_POP_GENOME, POP_DIRNAME + '/')
-# DIR_POP_GENOME_BLOCK_IDX = os.path.join(DIR_POP_GENOME_BLOCK, 'indexes/')
-
-# DIR_FIRST_PASS = os.path.join(DIR, 'experiments/{INDIV}/')
-# DIR_SECOND_PASS = os.path.join(DIR, 'experiments/{INDIV}/' + POP_DIRNAME)
-# PREFIX_SECOND_PASS = os.path.join(DIR_SECOND_PASS, 'chr{}-major-{}'.format(CHROM, ALN_MAPQ_THRSD) + '-{GROUP}-' + POP_DIRNAME)
-# # PREFIX_SECOND_PASS = os.path.join(DIR_SECOND_PASS, CHROM + '-major-' + ALN_MAPQ_THRSD + '-{GROUP}-' + POP_DIRNAME)
-
+DIR_FIRST_PASS = os.path.join(DIR, 'experiments/{INDIV}/')
 DIR_RESULTS = os.path.join(DIR, 'results/')
 DIR_RESULTS_BIAS = os.path.join(DIR, 'results/bias/')
 
@@ -92,30 +66,20 @@ IDX_ITEMS = ['1', '2', '3', '4', 'rev.1', 'rev.2']
 include: 'shared/functions.Snakefile'
 
 #: Build major allele ref and its indexes
-#:      check: 'major.done', 'grc.done', 'personalization.done'
-#:      check: 'prepare.done'
-include: 'shared/prepare_major_grc.Snakefile'
-
-#: Build personalized genomes and their indexes
-#:      check: 'prepare_pop_genome.done'
-# include: 'shared/prepare_pop_genome.Snakefile'
+#:      check: 'index.done'
+include: 'shared/index.Snakefile'
 
 #: Simulate reads from personalized genomes
 #:      check: 'simulation.done'
 include: 'shared/simulated_reads.Snakefile'
 
 # #: Align all reads to the standard genomes (one-pass)
-# #:      check: 'standard_onepass.done'
-# include: 'shared/align_standard_onepass.Snakefile'
+# #:      check: 'alignment.done'
+include: 'shared/align.Snakefile'
 # 
 # #: Split reads by MAPQ and align low-quality reads to pop genomes
 # #:      check: 'refflow_secondpass.done'
 # include: 'shared/align_refflow.Snakefile'
-# 
-# #: graph aligners
-# #:      vg: build graphs for vg and align reads to it
-# #:      check: 'vg_index.done', 'vg_map.done'
-# include: 'shared/graph_alignment.Snakefile'
 # 
 # #: Liftover sams for major and refflow
 # #:      check: 'liftover.done', 'sorting.done'
@@ -136,14 +100,9 @@ include: 'shared/simulated_reads.Snakefile'
 
 rule all:
     input:
-        #: indexes for grc, major allele ref and personlized genomes
-        # prep = os.path.join(DIR, 'prepare.done'),
-        #: simulation profile
+        index = os.path.join(DIR, 'index.done'),
         sim = os.path.join(DIR, 'simulation.done'),
-        #: pop-specific genomes and indexes
-        # popg = os.path.join(DIR, 'prepare_pop_genome.done'),
-        #: one pass alignment for grc, major and personalized
-        # std_onepass = os.path.join(DIR, 'standard_onepass.done'),
+        alignment = os.path.join(DIR, 'alignment.done'),
         #: second pass alignment (refflow)
         # secondpass = os.path.join(DIR, 'refflow_secondpass.done'),
         # #: liftover and sorting
@@ -160,20 +119,12 @@ rule all:
     run:
         sys.stderr.write('complete\n')
 
-# rule filter_unphased_vcf:
+# rule filter_phased_vcf:
 #     input:
-#         vcf = UNPHASED_VCF
+#         vcf = PHASED_VCF,
+#         chrom_map = CHROM_MAP
 #     output:
-#         vcf = UNPHASED_VCF_F
+#         vcf = PHASED_VCF_F
 #     shell:
-#         '{BCFTOOLS} view -V mnps,other -c 1 -m 2 -M 2 -f PASS -O v {input.vcf} | {BCFTOOLS} norm -d all -o {output.vcf}'
-
-rule filter_phased_vcf:
-    input:
-        vcf = PHASED_VCF,
-        chrom_map = CHROM_MAP
-        # chrom_map = os.path.join(DIR, 'GRCh38.chrom_map')
-    output:
-        vcf = PHASED_VCF_F
-    shell:
-        '{BCFTOOLS} view -V mnps,other -c 1 -f PASS -O v {input.vcf} | {BCFTOOLS} norm -d all | {BCFTOOLS} annotate --rename-chrs {input.chrom_map} -o {output.vcf}'
+#         '{BCFTOOLS} view -V mnps,other -c 1 -f PASS -O v {input.vcf} | \ '
+#         '{BCFTOOLS} norm -d all | {BCFTOOLS} annotate --rename-chrs {input.chrom_map} -o {output.vcf}'
