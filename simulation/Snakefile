@@ -41,14 +41,6 @@ MAX_SYSTEM_THREADS = config['MAX_SYSTEM_THREADS']
 RAND_SEED = config['RAND_SEED']
 ''''''
 
-PHASED_VCF_F = os.path.join(DIR, CHROM + '_phased_filt.vcf')
-
-# PREFIX_MAJOR_F = os.path.join(DIR, 'major/chr' + CHROM + '-filtered_major')
-# PREFIX_MAJOR = os.path.join(DIR, 'major/chr' + CHROM + '-major')
-# PREFIX_MAJOR_IDX = os.path.join(DIR, 'major/indexes/chr' + CHROM + '-major')
-# DIR_MAJOR = os.path.join(DIR, 'major/')
-
-# DIR_GRC = os.path.join(DIR, 'grc/')
 DIR_IDX = os.path.join(DIR, 'indexes/')
 
 DIR_PER = os.path.join(DIR, 'simulation/{INDIV}/')

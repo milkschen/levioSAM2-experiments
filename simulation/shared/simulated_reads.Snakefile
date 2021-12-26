@@ -2,9 +2,9 @@ rule extract_genotypes:
     input:
         vcf = PHASED_VCF
     output:
-        vcf = PREFIX_PER + '.vcf.gz'
+        vcf = os.path.join(DIR, 'simulation/{s}/' + 'chr{}-per'.format(CHROM) + '.vcf.gz')
     shell:
-        '{BCFTOOLS} view -s {INDIV} {input.vcf} | '
+        '{BCFTOOLS} view -s {wildcards.s} {input.vcf} | '
         '{BCFTOOLS} norm -d all -O z -o {output.vcf}'
 
 # ~/data_blangme2/naechyun/software/mason2-2.0.9-Linux-x86_64/bin/mason_simulator -ir ~/data_blangme2/fasta/grch38/chr21.fa -n 1000 -o reads_1.fq -or reads_2.fq -oa n_1000.sam -iv ~/scr16_blangme2/naechyun/leviosam_exp/simulation_chr21/simulation/NA12878/chr21-per.vcf
