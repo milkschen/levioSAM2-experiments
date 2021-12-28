@@ -9,11 +9,11 @@ rule bt2_align_to_source:
         reads1 = PREFIX_PER + '_1.fq',
         reads2 = PREFIX_PER + '_2.fq',
         idx = expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_source.{i}.bt2'), i = BT2_IDX_ITEMS)
-    params:
-        DIR_IDX + 'chr{}_source'.format(CHROM)
+            DIR_IDX, f'{SOURCE_LABEL}' + '.{i}.bt2'), i = BT2_IDX_ITEMS)
     output:
-        os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-source.bam'.format(CHROM))
+        os.path.join(DIR_FIRST_PASS, f'bt2-{SOURCE_LABEL}.bam')
+    params:
+        os.path.join(DIR_IDX, f'{SOURCE_LABEL}')
     threads: THREADS
     shell:
         '{BOWTIE2} --threads {threads} -x {params} -1 {input.reads1} -2 {input.reads2} | '
@@ -24,11 +24,11 @@ rule bwa_align_to_source:
         reads1 = PREFIX_PER + '_1.fq',
         reads2 = PREFIX_PER + '_2.fq',
         idx = expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_source.{i}'), i = BWA_IDX_ITEMS)
-    params:
-        DIR_IDX + 'chr{}_source'.format(CHROM)
+            DIR_IDX, f'{SOURCE_LABEL}' + '.{i}'), i = BWA_IDX_ITEMS)
     output:
-        os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-source.bam'.format(CHROM))
+        os.path.join(DIR_FIRST_PASS, f'bwa-{SOURCE_LABEL}.bam')
+    params:
+        os.path.join(DIR_IDX, f'{SOURCE_LABEL}')
     threads: THREADS
     shell:
         '{BWA} mem -t {threads} {params} {input.reads1} {input.reads2} | '
@@ -39,11 +39,11 @@ rule bt2_align_to_target:
         reads1 = PREFIX_PER + '_1.fq',
         reads2 = PREFIX_PER + '_2.fq',
         idx = expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_target.{i}.bt2'), i = BT2_IDX_ITEMS)
-    params:
-        DIR_IDX + 'chr{}_target'.format(CHROM)
+            DIR_IDX, f'{TARGET_LABEL}' + '.{i}.bt2'), i = BT2_IDX_ITEMS)
     output:
-        os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-target.bam'.format(CHROM))
+        os.path.join(DIR_FIRST_PASS, f'bt2-{TARGET_LABEL}.bam')
+    params:
+        os.path.join(DIR_IDX, f'{TARGET_LABEL}')
     threads: THREADS
     shell:
         '{BOWTIE2} --threads {threads} -x {params} -1 {input.reads1} -2 {input.reads2} | '
@@ -54,35 +54,21 @@ rule bwa_align_to_target:
         reads1 = PREFIX_PER + '_1.fq',
         reads2 = PREFIX_PER + '_2.fq',
         idx = expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_target.{i}'), i = BWA_IDX_ITEMS)
-    params:
-        DIR_IDX + 'chr{}_target'.format(CHROM)
+            DIR_IDX, f'{TARGET_LABEL}' + '.{i}'), i = BWA_IDX_ITEMS)
     output:
-        os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-target.bam'.format(CHROM))
+        os.path.join(DIR_FIRST_PASS, f'bwa-{TARGET_LABEL}.bam')
+    params:
+        os.path.join(DIR_IDX, f'{TARGET_LABEL}')
     threads: THREADS
     shell:
         '{BWA} mem -t {threads} {params} {input.reads1} {input.reads2} | '
         '{SAMTOOLS} view -hb -o {output}'
 
-rule check_standard_onepass:
+rule check_alignment:
     input:
         expand(
-            os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-source.bam'.format(CHROM)),
-            INDIV = INDIV),
-        expand(
-            os.path.join(DIR_FIRST_PASS, 'bt2-chr{}-target.bam'.format(CHROM)),
-            INDIV = INDIV),
-        expand(
-            os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-source.bam'.format(CHROM)),
-            INDIV = INDIV),
-        expand(
-            os.path.join(DIR_FIRST_PASS, 'bwa-chr{}-target.bam'.format(CHROM)),
-            INDIV = INDIV),
-        # samA = expand(
-        #     os.path.join(DIR_FIRST_PASS, 'chr{}-per-merged-hapA.sam'.format(CHROM)),
-        #     INDIV = INDIV),
-        # samB = expand(
-        #     os.path.join(DIR_FIRST_PASS, 'chr{}-per-merged-hapB.sam'.format(CHROM)),
-        #     INDIV = INDIV),
+            os.path.join(DIR_FIRST_PASS, '{aln}-{label}.bam'),
+            INDIV = INDIV, label = [SOURCE_LABEL, TARGET_LABEL],
+            aln = ['bwa', 'bt2']),
     output:
         touch(temp(os.path.join(DIR, 'alignment.done')))

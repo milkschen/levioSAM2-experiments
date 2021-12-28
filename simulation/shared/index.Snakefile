@@ -6,10 +6,10 @@ rule bt2_index_source:
         SOURCE_REF
     output:
         expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_source.{i}.bt2'),
+            DIR_IDX, f'{SOURCE_LABEL}' + '.{i}.bt2'),
             i = BT2_IDX_ITEMS)
     params:
-        os.path.join(DIR_IDX, 'chr{}_source'.format(CHROM))
+        os.path.join(DIR_IDX, f'{SOURCE_LABEL}')
     threads: THREADS
     shell:
         '{BOWTIE2}-build --threads {threads} {input} {params}'
@@ -19,11 +19,10 @@ rule bwa_index_source:
         SOURCE_REF
     output:
         expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_source.{i}'),
+            DIR_IDX, f'{SOURCE_LABEL}' + '.{i}'),
             i = BWA_IDX_ITEMS)
     params:
-        os.path.join(DIR_IDX, 'chr{}_source'.format(CHROM))
-    threads: THREADS
+        os.path.join(DIR_IDX, f'{SOURCE_LABEL}')
     shell:
         '{BWA} index -p {params} {input}'
 
@@ -35,10 +34,10 @@ rule bt2_index_target:
         TARGET_REF
     output:
         expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_target.{i}.bt2'),
+            DIR_IDX, f'{TARGET_LABEL}' + '.{i}.bt2'),
             i = BT2_IDX_ITEMS)
     params:
-        os.path.join(DIR_IDX, 'chr{}_target'.format(CHROM))
+        os.path.join(DIR_IDX, f'{TARGET_LABEL}')
     threads: THREADS
     shell:
         '{BOWTIE2}-build --threads {threads} {input} {params}'
@@ -48,21 +47,20 @@ rule bwa_index_target:
         SOURCE_REF
     output:
         expand(os.path.join(
-            DIR_IDX, 'chr{}'.format(CHROM) + '_target.{i}'),
+            DIR_IDX, f'{TARGET_LABEL}' + '.{i}'),
             i = BWA_IDX_ITEMS)
     params:
-        os.path.join(DIR_IDX, 'chr{}_target'.format(CHROM))
-    threads: THREADS
+        os.path.join(DIR_IDX, f'{TARGET_LABEL}')
     shell:
         '{BWA} index -p {params} {input}'
 
 rule check_index:
     input:
-        expand(os.path.join(DIR_IDX, 'chr{}'.format(CHROM) + '_{label}.{idx_item}.bt2'),
+        expand(os.path.join(DIR_IDX, '{label}.{idx_item}.bt2'),
             idx_item = BT2_IDX_ITEMS,
-            label = ['source', 'target']),
-        expand(os.path.join(DIR_IDX, 'chr{}'.format(CHROM) + '_{label}.{idx_item}'),
+            label = [SOURCE_LABEL, TARGET_LABEL]),
+        expand(os.path.join(DIR_IDX, '{label}.{idx_item}'),
             idx_item = BWA_IDX_ITEMS,
-            label = ['source', 'target'])
+            label = [SOURCE_LABEL, TARGET_LABEL])
     output:
         touch(temp(os.path.join(DIR, 'index.done')))

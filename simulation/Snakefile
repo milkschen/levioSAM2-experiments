@@ -19,10 +19,42 @@ SIMULATION_REF = config['SIMULATION_REF']
 SOURCE_REF = config['SOURCE_REF']
 TARGET_REF = config['TARGET_REF']
 PHASED_VCF = config['PHASED_VCF']
-FAMILY = config['FAMILY']
-SPOP = config['SPOP']
-LENGTH_MAP = config['LENGTH_MAP']
-CHROM_MAP = config['CHROM_MAP']
+#FAMILY = config['FAMILY']
+#SPOP = config['SPOP']
+#LENGTH_MAP = config['LENGTH_MAP']
+#CHROM_MAP = config['CHROM_MAP']
+
+SOURCE_LABEL = config['SOURCE_LABEL']
+TARGET_LABEL = config['TARGET_LABEL']
+CLFT = config['CLFT']
+MAX_CHAIN_GAP = config['MAX_CHAIN_GAP']
+MIN_MAPQ = config['MIN_MAPQ']
+MAX_ISIZE = config['MAX_ISIZE']
+MIN_ALN_SCORE = config['MIN_ALN_SCORE']
+MAX_CLIPPED_FRAC = config['MAX_CLIPPED_FRAC']
+MAX_HDIST = config['MAX_HDIST']
+
+
+LEVIOSAM_OPTIONS = ''
+if MIN_MAPQ != '':
+    LEVIOSAM_OPTIONS += f' -S mapq:{MIN_MAPQ}'
+if MAX_ISIZE != '':
+    LEVIOSAM_OPTIONS += f' -S isize:{MAX_ISIZE}'
+if MIN_ALN_SCORE != '':
+    LEVIOSAM_OPTIONS += f' -S aln_score:{MIN_ALN_SCORE}'
+if MAX_CLIPPED_FRAC != '':
+    LEVIOSAM_OPTIONS += f' -S clipped_frac:{MAX_CLIPPED_FRAC}'
+if MAX_HDIST != '':
+    LEVIOSAM_OPTIONS += f' -S hdist:{MAX_HDIST}'
+
+# LEVIOSAM_OPTIONS : 
+#     '-S mapq:30 -S isize:1000 -S aln_score:100 '
+#     '-S clipped_frac:0.95 -S hdist:5 -G 0 -m '
+#     '-D {DEFER_DEST_BED} -r {COMMIT_SOURCE_BED}'
+BT2_READ_GROUP = config['BT2_READ_GROUP']
+BWA_READ_GROUP = config['BWA_READ_GROUP']
+COMMIT_SOURCE_BED = config['COMMIT_SOURCE_BED']
+DEFER_TARGET_BED = config['DEFER_TARGET_BED']
 
 #: path of tools used
 BOWTIE2 = config['BOWTIE2']
@@ -30,7 +62,7 @@ BWA = config['BWA']
 BCFTOOLS = config['BCFTOOLS']
 SAMTOOLS = config['SAMTOOLS']
 MASON2 = config['MASON2']
-LIFTOVER = config['LIFTOVER']
+LEVIOSAM = config['LEVIOSAM']
 PYTHON = config['PYTHON']
 DIR_SCRIPTS = config['DIR_SCRIPTS']
 TIME = config['TIME']
@@ -69,6 +101,7 @@ include: 'shared/simulated_reads.Snakefile'
 # #: Align all reads to the standard genomes (one-pass)
 # #:      check: 'alignment.done'
 include: 'shared/align.Snakefile'
+include: 'shared/leviosam.Snakefile'
 # 
 # #: Split reads by MAPQ and align low-quality reads to pop genomes
 # #:      check: 'refflow_secondpass.done'
@@ -96,8 +129,7 @@ rule all:
         index = os.path.join(DIR, 'index.done'),
         sim = os.path.join(DIR, 'simulation.done'),
         alignment = os.path.join(DIR, 'alignment.done'),
-        #: second pass alignment (refflow)
-        # secondpass = os.path.join(DIR, 'refflow_secondpass.done'),
+        leviosam = os.path.join(DIR, 'leviosam.done'),
         # #: liftover and sorting
         # # lft = os.path.join(DIR, 'liftover.done'),
         # sort = os.path.join(DIR, 'sorting.done'),
