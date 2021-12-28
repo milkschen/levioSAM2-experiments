@@ -28,33 +28,50 @@ SOURCE_LABEL = config['SOURCE_LABEL']
 TARGET_LABEL = config['TARGET_LABEL']
 CLFT = config['CLFT']
 MAX_CHAIN_GAP = config['MAX_CHAIN_GAP']
-MIN_MAPQ = config['MIN_MAPQ']
+# We use difference min_mapq and min_aln_score for bt2 and bwa
+BT2_MIN_MAPQ = config['BT2_MIN_MAPQ']
+BT2_MIN_ALN_SCORE = config['BT2_MIN_ALN_SCORE']
+BWA_MIN_MAPQ = config['BWA_MIN_MAPQ']
+BWA_MIN_ALN_SCORE = config['BWA_MIN_ALN_SCORE']
 MAX_ISIZE = config['MAX_ISIZE']
-MIN_ALN_SCORE = config['MIN_ALN_SCORE']
 MAX_CLIPPED_FRAC = config['MAX_CLIPPED_FRAC']
 MAX_HDIST = config['MAX_HDIST']
+BT2_READ_GROUP = config['BT2_READ_GROUP']
+BWA_READ_GROUP = config['BWA_READ_GROUP']
+if BWA_READ_GROUP != '' and BWA_READ_GROUP.count('-R') == 0:
+    BWA_READ_GROUP = '- R ' + BWA_READ_GROUP
+COMMIT_SOURCE_BED = config['COMMIT_SOURCE_BED']
+DEFER_TARGET_BED = config['DEFER_TARGET_BED']
 
 
 LEVIOSAM_OPTIONS = ''
-if MIN_MAPQ != '':
-    LEVIOSAM_OPTIONS += f' -S mapq:{MIN_MAPQ}'
 if MAX_ISIZE != '':
     LEVIOSAM_OPTIONS += f' -S isize:{MAX_ISIZE}'
-if MIN_ALN_SCORE != '':
-    LEVIOSAM_OPTIONS += f' -S aln_score:{MIN_ALN_SCORE}'
 if MAX_CLIPPED_FRAC != '':
     LEVIOSAM_OPTIONS += f' -S clipped_frac:{MAX_CLIPPED_FRAC}'
 if MAX_HDIST != '':
     LEVIOSAM_OPTIONS += f' -S hdist:{MAX_HDIST}'
+if DEFER_TARGET_BED != '':
+    LEVIOSAM_OPTIONS += f' -D {DEFER_TARGET_BED}'
+if COMMIT_SOURCE_BED != '':
+    LEVIOSAM_OPTIONS += f' -r {COMMIT_SOURCE_BED}'
+
+BT2_LEVIOSAM_OPTIONS = LEVIOSAM_OPTIONS
+if BT2_MIN_MAPQ != '':
+    BT2_LEVIOSAM_OPTIONS += f' -S mapq:{BT2_MIN_MAPQ}'
+if BT2_MIN_ALN_SCORE != '':
+    BT2_LEVIOSAM_OPTIONS += f' -S aln_score:{BT2_MIN_ALN_SCORE}'
+
+BWA_LEVIOSAM_OPTIONS = LEVIOSAM_OPTIONS
+if BWA_MIN_MAPQ != '':
+    BWA_LEVIOSAM_OPTIONS += f' -S mapq:{BWA_MIN_MAPQ}'
+if BWA_MIN_ALN_SCORE != '':
+    BWA_LEVIOSAM_OPTIONS += f' -S aln_score:{BWA_MIN_ALN_SCORE}'
 
 # LEVIOSAM_OPTIONS : 
 #     '-S mapq:30 -S isize:1000 -S aln_score:100 '
 #     '-S clipped_frac:0.95 -S hdist:5 -G 0 -m '
-#     '-D {DEFER_DEST_BED} -r {COMMIT_SOURCE_BED}'
-BT2_READ_GROUP = config['BT2_READ_GROUP']
-BWA_READ_GROUP = config['BWA_READ_GROUP']
-COMMIT_SOURCE_BED = config['COMMIT_SOURCE_BED']
-DEFER_TARGET_BED = config['DEFER_TARGET_BED']
+#     '-D {DEFER_TARGET_BED} -r {COMMIT_SOURCE_BED}'
 
 #: path of tools used
 BOWTIE2 = config['BOWTIE2']
