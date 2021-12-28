@@ -44,7 +44,7 @@ rule bt2_index_target:
 
 rule bwa_index_target:
     input:
-        SOURCE_REF
+        TARGET_REF
     output:
         expand(os.path.join(
             DIR_IDX, f'{TARGET_LABEL}' + '.{i}'),
