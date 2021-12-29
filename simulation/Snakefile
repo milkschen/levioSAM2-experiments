@@ -9,9 +9,9 @@ CHROM = config['CHROM']
 INDIV = config['INDIV']
 GROUP = config['GROUP']
 NUM_SIM_READS = config['NUM_SIM_READS']
-ALN_MAPQ_THRSD = config['ALN_MAPQ_THRSD']
-BIAS_MIN_READ_COUNT = config['BIAS_MIN_READ_COUNT']
-BIAS_TAIL_THRDS = config['BIAS_TAIL_THRDS']
+# ALN_MAPQ_THRSD = config['ALN_MAPQ_THRSD']
+# BIAS_MIN_READ_COUNT = config['BIAS_MIN_READ_COUNT']
+# BIAS_TAIL_THRDS = config['BIAS_TAIL_THRDS']
 
 #: paths
 DIR = config['DIR']
@@ -104,33 +104,25 @@ BT2_IDX_ITEMS = ['1', '2', '3', '4', 'rev.1', 'rev.2']
 BWA_IDX_ITEMS = ['amb', 'bwt', 'sa', 'ann', 'pac']
 
 ''' Included rules '''
-#: Functions needed in the pipeline
-include: 'shared/functions.Snakefile'
+# Functions needed in the pipeline
+# include: 'shared/functions.Snakefile'
 
-#: Build major allele ref and its indexes
-#:      check: 'index.done'
+# Build indexes for aligners
+#   checkpoint: 'index.done'
 include: 'shared/index.Snakefile'
 
-#: Simulate reads from personalized genomes
-#:      check: 'simulation.done'
+# Simulate reads from personalized genomes
+#   checkpoint: 'simulation.done'
 include: 'shared/simulated_reads.Snakefile'
 
-# #: Align all reads to the standard genomes (one-pass)
-# #:      check: 'alignment.done'
+# Alignment
+#   checkpoint: 'alignment.done'
 include: 'shared/align.Snakefile'
 include: 'shared/leviosam.Snakefile'
 # 
 # #: Split reads by MAPQ and align low-quality reads to pop genomes
 # #:      check: 'refflow_secondpass.done'
 # include: 'shared/align_refflow.Snakefile'
-# 
-# #: Liftover sams for major and refflow
-# #:      check: 'liftover.done', 'sorting.done'
-# include: 'shared/liftover.Snakefile'
-# 
-# #: Calculate allelic bias
-# #:      check: 'refbias.done', 'find_biased_reads.done'
-# include: 'shared/calc_refbias.Snakefile'
 # 
 # #: Calculate mapping accuracy and
 # #: summarize all results into a tsv
@@ -144,15 +136,9 @@ include: 'shared/leviosam.Snakefile'
 rule all:
     input:
         index = os.path.join(DIR, 'index.done'),
-        sim = os.path.join(DIR, 'simulation.done'),
+        simulation = os.path.join(DIR, 'simulation.done'),
         alignment = os.path.join(DIR, 'alignment.done'),
         leviosam = os.path.join(DIR, 'leviosam.done'),
-        # #: liftover and sorting
-        # # lft = os.path.join(DIR, 'liftover.done'),
-        # sort = os.path.join(DIR, 'sorting.done'),
-        # #: refbias
-        # refbias = os.path.join(DIR, 'refbias.done'),
-        # # find_biased_reads = os.path.join(DIR, 'find_biased_reads.done'),
         # # #: accuracy
         # # acc = os.path.join(DIR, 'accuracy.done'),
         # # tsv = os.path.join(DIR_RESULTS, 'all.tsv'),
@@ -161,12 +147,15 @@ rule all:
     run:
         sys.stderr.write('complete\n')
 
-# rule filter_phased_vcf:
-#     input:
-#         vcf = PHASED_VCF,
-#         chrom_map = CHROM_MAP
-#     output:
-#         vcf = PHASED_VCF_F
-#     shell:
-#         '{BCFTOOLS} view -V mnps,other -c 1 -f PASS -O v {input.vcf} | \ '
-#         '{BCFTOOLS} norm -d all | {BCFTOOLS} annotate --rename-chrs {input.chrom_map} -o {output.vcf}'
+def summarize_accuracy(fn_input, fn_output):
+    with open(fn_input, 'r') as f:
+        list_tp = []
+        list_all = []
+        for line in f:
+            if line.count('sensitivity_all') > 0:
+                line = line.split()
+                list_tp.append(int(line[3][1:]))
+                list_all.append(int(line[5][:-1]))
+    f_out = open(fn_output, 'w')
+    f_out.write('{0}\n{1}\n{2}\n'.format(sum(list_tp), sum(list_all), sum(list_tp) / sum(list_all)))
+    return

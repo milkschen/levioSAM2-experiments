@@ -6,8 +6,8 @@ Checkpoint:
 '''
 rule bt2_align_to_source:
     input:
-        fq1 = PREFIX_PER + '_1.fq',
-        fq2 = PREFIX_PER + '_2.fq',
+        fq1 = PREFIX_PER + '_1.fq.gz',
+        fq2 = PREFIX_PER + '_2.fq.gz',
         idx = expand(os.path.join(
             DIR_IDX, f'{SOURCE_LABEL}' + '.{i}.bt2'), i = BT2_IDX_ITEMS)
     output:
@@ -21,8 +21,8 @@ rule bt2_align_to_source:
 
 rule bwa_align_to_source:
     input:
-        fq1 = PREFIX_PER + '_1.fq',
-        fq2 = PREFIX_PER + '_2.fq',
+        fq1 = PREFIX_PER + '_1.fq.gz',
+        fq2 = PREFIX_PER + '_2.fq.gz',
         idx = expand(os.path.join(
             DIR_IDX, f'{SOURCE_LABEL}' + '.{i}'), i = BWA_IDX_ITEMS)
     output:
@@ -37,8 +37,8 @@ rule bwa_align_to_source:
 
 rule bt2_align_to_target:
     input:
-        fq1 = PREFIX_PER + '_1.fq',
-        fq2 = PREFIX_PER + '_2.fq',
+        fq1 = PREFIX_PER + '_1.fq.gz',
+        fq2 = PREFIX_PER + '_2.fq.gz',
         idx = expand(os.path.join(
             DIR_IDX, f'{TARGET_LABEL}' + '.{i}.bt2'), i = BT2_IDX_ITEMS)
     output:
@@ -52,8 +52,8 @@ rule bt2_align_to_target:
 
 rule bwa_align_to_target:
     input:
-        fq1 = PREFIX_PER + '_1.fq',
-        fq2 = PREFIX_PER + '_2.fq',
+        fq1 = PREFIX_PER + '_1.fq.gz',
+        fq2 = PREFIX_PER + '_2.fq.gz',
         idx = expand(os.path.join(
             DIR_IDX, f'{TARGET_LABEL}' + '.{i}'), i = BWA_IDX_ITEMS)
     output:
