@@ -19,8 +19,8 @@ SIMULATION_REF = config['SIMULATION_REF']
 SOURCE_REF = config['SOURCE_REF']
 TARGET_REF = config['TARGET_REF']
 PHASED_VCF = config['PHASED_VCF']
-#FAMILY = config['FAMILY']
-#SPOP = config['SPOP']
+FAMILY = config['FAMILY']
+SPOP = config['SPOP']
 #LENGTH_MAP = config['LENGTH_MAP']
 #CHROM_MAP = config['CHROM_MAP']
 
@@ -105,7 +105,7 @@ BWA_IDX_ITEMS = ['amb', 'bwt', 'sa', 'ann', 'pac']
 
 ''' Included rules '''
 # Functions needed in the pipeline
-# include: 'shared/functions.Snakefile'
+include: 'shared/functions.Snakefile'
 
 # Build indexes for aligners
 #   checkpoint: 'index.done'
@@ -119,15 +119,10 @@ include: 'shared/simulated_reads.Snakefile'
 #   checkpoint: 'alignment.done'
 include: 'shared/align.Snakefile'
 include: 'shared/leviosam.Snakefile'
-# 
-# #: Split reads by MAPQ and align low-quality reads to pop genomes
-# #:      check: 'refflow_secondpass.done'
-# include: 'shared/align_refflow.Snakefile'
-# 
-# #: Calculate mapping accuracy and
-# #: summarize all results into a tsv
-# #:      check: 'accuracy.done'
-# include: 'shared/calc_mapping_acc.Snakefile'
+
+# Calculate mapping accuracy and summarize all results into a tsv
+#   checkpoint: 'accuracy.done'
+include: 'shared/calc_mapping_acc.Snakefile'
 # 
 # #: Rules to analyze results, not belong to standard pipeline
 # #:      check: 'analysis.done'
@@ -139,23 +134,22 @@ rule all:
         simulation = os.path.join(DIR, 'simulation.done'),
         alignment = os.path.join(DIR, 'alignment.done'),
         leviosam = os.path.join(DIR, 'leviosam.done'),
-        # # #: accuracy
-        # # acc = os.path.join(DIR, 'accuracy.done'),
-        # # tsv = os.path.join(DIR_RESULTS, 'all.tsv'),
-        # #: analysis
+        mapping_acc = os.path.join(DIR, 'accuracy.done'),
+        mapping_acc_tsv = os.path.join(DIR_RESULTS, 'all.tsv'),
+        # analysis
         # analysis = os.path.join(DIR, 'analysis.done')
     run:
         sys.stderr.write('complete\n')
 
-def summarize_accuracy(fn_input, fn_output):
-    with open(fn_input, 'r') as f:
-        list_tp = []
-        list_all = []
-        for line in f:
-            if line.count('sensitivity_all') > 0:
-                line = line.split()
-                list_tp.append(int(line[3][1:]))
-                list_all.append(int(line[5][:-1]))
-    f_out = open(fn_output, 'w')
-    f_out.write('{0}\n{1}\n{2}\n'.format(sum(list_tp), sum(list_all), sum(list_tp) / sum(list_all)))
-    return
+# def summarize_accuracy(fn_input, fn_output):
+#     with open(fn_input, 'r') as f:
+#         list_tp = []
+#         list_all = []
+#         for line in f:
+#             if line.count('sensitivity_all') > 0:
+#                 line = line.split()
+#                 list_tp.append(int(line[3][1:]))
+#                 list_all.append(int(line[5][:-1]))
+#     f_out = open(fn_output, 'w')
+#     f_out.write('{0}\n{1}\n{2}\n'.format(sum(list_tp), sum(list_all), sum(list_tp) / sum(list_all)))
+#     return
