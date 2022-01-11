@@ -1,0 +1,261 @@
+---
+title: "LevioSAM R Plots"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
+library(reshape2)
+library(RColorBrewer)
+library(hash)
+source("helper.R")
+```
+
+
+```{r global}
+save <- FALSE
+
+# make precision-recall curve
+pr <- T
+
+filenames <- c("chm13_to_grch38", "grch38", "grch38_masked", "chm13_to_hg19", "hg19")
+printednames <- c("CHM13-to-GRCh38", "GRCh38", "GRCh38-masked", "CHM13-to-GRCh37", "GRCh37")
+map_caller_name <- hash()
+for (i in seq(1, length(filenames))){
+  map_caller_name[[filenames[i]]] <- printednames[i]}
+
+aln_short <- c("bt2", "bwa")
+aln_names <- c("Bowtie 2", "BWA-MEM")
+map_aln_name <- hash()
+for (i in seq(1, length(aln_short))){
+  map_aln_name[[aln_short[i]]] <- aln_names[i]}
+```
+
+
+## Small variant calling
+
+```{r hg003_wgs, message=FALSE}
+df_hg002_bwa_dv <- do.call(rbind, lapply(c("v0.5.1/hg002/grch38", "v0.5.1/hg002/chm13_to_grch38", "v0.5.1/hg002/hg19", "v0.5.1/hg002/chm13_to_hg19"), read_single_with_map, map_caller_name=map_caller_name))
+df_hg001_bwa_dv <- do.call(rbind, lapply(c("v0.5.1/hg001/grch38", "v0.5.1/hg001/chm13_to_grch38", "v0.5.1/hg001/hg19", "v0.5.1/hg001/chm13_to_hg19"), read_single_with_map, map_caller_name=map_caller_name))
+df_hg005_bwa_dv <- do.call(rbind, lapply(c("v0.5.1/hg005/grch38", "v0.5.1/hg005/chm13_to_grch38", "v0.5.1/hg005/hg19", "v0.5.1/hg005/chm13_to_hg19"), read_single_with_map, map_caller_name=map_caller_name))
+
+df_hg002_bwa_dv$Sample <- "HG002"
+df_hg001_bwa_dv$Sample <- "HG001"
+df_hg005_bwa_dv$Sample <- "HG005"
+df_bwa_dv <- rbind(df_hg002_bwa_dv, df_hg001_bwa_dv, df_hg005_bwa_dv)
+df_bwa_dv$Sample = factor(df_bwa_dv$Sample, levels=c("HG002", "HG001", "HG005"))
+
+# Define the order of lines/points when they overlap
+df_bwa_dv$name = factor(df_bwa_dv$name, levels=printednames)
+df_bwa_dv$name_rev = factor(df_bwa_dv$name, levels=rev(printednames))
+
+
+plot_bwa_dv <- plot_data_combined(df_bwa_dv %>% arrange(name_rev), highlight=c("CHM13-to-GRCh38", "CHM13-to-GRCh37"), is.PR=pr) +
+  xlab("Recall") + ylab("Precision") + 
+  # facet_grid(cols=vars(Sample)) +
+  facet_grid(rows=vars(Type), cols=vars(Sample)) +
+  # ylim(0.985, 1) + xlim(0.985, 1) +
+  ylim(0.996, 1) + xlim(0.985, 1) +
+  theme(legend.position = "bottom",
+    strip.background = element_rect(
+      color="white", fill="white", size=0.5, linetype="solid"
+    ),
+    axis.text.x = element_text(angle = 20, vjust = 1, hjust=1)
+  )
+plot_bwa_dv
+
+
+if (save){
+  ggsave("figures/small_variants-bwa_dv.pdf", plot_bwa_dv, width=11, height=6)
+  write.csv(
+    df_bwa_dv %>% filter(Filter=="PASS") %>% select(name, Type, Sample, TRUTH.TP, TRUTH.FN, QUERY.FP, METRIC.Recall, METRIC.Precision, METRIC.F1_Score),
+    "csvs/small_variants-bwa_dv.csv", row.names = FALSE)
+
+}
+```
+
+## Alignment (simulated data)
+
+```{r aln_sim_chr21_single_aln}
+df_sim_chr21 <- read.delim("v0.5.1/sim_chr21/all_masked.tsv", header = TRUE, sep = "\t")
+df_sim_chr21$Method <- factor(values(map_caller_name, keys=df_sim_chr21$Method), levels = printednames)
+
+plot_sim_chr21 <- function(df, aln = "", methods = "") {
+  if (aln != "")
+    df <- df %>% filter(Aligner == aln)
+  if (methods != "")
+    df <- df %>% filter(Method %in% methods)
+  
+  fig_recall <- ggplot(df, aes(x=Method, y=TruePositive/NumReads, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("Recall") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  # fig_recall
+  
+  fig_precision <- ggplot(df, aes(x=Method, y=TruePositive/NumMapped, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("Precision") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  # fig_precision
+  
+  ymin = min(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
+  ymax = max(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
+  ydiff = ymax - ymin
+  ymin = ymin - 0.05 * ydiff
+  ymax = ymax + 0.05 * ydiff
+  
+  grid_arrange_shared_legend(
+    T, 1, 1,
+    fig_recall + ylim(ymin, ymax),# + theme(axis.text.x = element_text(size = 12)),
+    fig_precision + ylim(ymin, ymax))
+}
+
+fig_sim_chr21_bt2 <- plot_sim_chr21(df = df_sim_chr21, aln = "bt2", method = c("CHM13-to-GRCh38", "GRCh38"))
+fig_sim_chr21_bwa <- plot_sim_chr21(df = df_sim_chr21, aln = "bwa", method = c("CHM13-to-GRCh38", "GRCh38"))
+fig_sim_chr21_bt2_supp <- plot_sim_chr21(df = df_sim_chr21, aln = "bt2")
+fig_sim_chr21_bwa_supp <- plot_sim_chr21(df = df_sim_chr21, aln = "bwa")
+
+if (save){
+  ggsave("figures/sim_chr21-bt2.pdf", fig_sim_chr21_bt2, width=11, height=6)
+  ggsave("figures/sim_chr21-bwa.pdf", fig_sim_chr21_bwa, width=11, height=6)
+  ggsave("figures/sim_chr21-bt2-supp.pdf", fig_sim_chr21_bt2_supp, width=11, height=6)
+  ggsave("figures/sim_chr21-bwa-supp.pdf", fig_sim_chr21_bwa_supp, width=11, height=6)
+}
+```
+
+```{r aln_sim_chr21_two_aln}
+df_sim_chr21 <- read.delim("v0.5.1/sim_chr21/all_masked.tsv", header = TRUE, sep = "\t")
+df_sim_chr21$Method <- factor(values(map_caller_name, keys=df_sim_chr21$Method), levels = printednames)
+df_sim_chr21$Aligner <- factor(values(map_aln_name, keys=df_sim_chr21$Aligner), levels = aln_names)
+
+plot_sim_chr21_two_aln <- function(methods = "", df, aln1, aln2) {
+  if (methods != ""){
+    df <- df %>% filter(Method %in% methods)
+  }
+  fig_recall_1 <- ggplot(df %>% filter(Aligner == aln1), aes(x=Method, y=TruePositive/NumReads, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("Recall") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  fig_precision_1 <- ggplot(df %>% filter(Aligner == aln1), aes(x=Method, y=TruePositive/NumMapped, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("Precision") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  fig_frac_highq_1 <- ggplot(df %>% filter(Aligner == aln1), aes(x=Method, y=NumHighMapq/NumMapped, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("%HighMapQ") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+
+  ymin_1 = min(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
+  ymax_1 = max(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
+  ydiff_1 = ymax_1 - ymin_1
+  ymin_1 = ymin_1 - 0.05 * ydiff_1
+  ymax_1 = ymax_1 + 0.05 * ydiff_1
+  
+  fig_recall_2 <- ggplot(df %>% filter(Aligner == aln2), aes(x=Method, y=TruePositive/NumReads, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("Recall") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  fig_precision_2 <- ggplot(df %>% filter(Aligner == aln2), aes(x=Method, y=TruePositive/NumMapped, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("Precision") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  fig_frac_highq_2 <- ggplot(df %>% filter(Aligner == aln2), aes(x=Method, y=NumHighMapq/NumMapped, color = SuperPopulation)) + 
+    geom_boxplot() + 
+    ylab("%HighMapQ") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+
+  ymin_2 = min(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
+  ymax_2 = max(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
+  ydiff_2 = ymax_2 - ymin_2
+  ymin_2 = ymin_2 - 0.05 * ydiff_2
+  ymax_2 = ymax_2 + 0.05 * ydiff_2
+  
+  grid_arrange_shared_legend(
+    T, 1, 1,
+    fig_recall_1 + ylim(ymin_1, ymax_1),
+    fig_precision_1 + ylim(ymin_1, ymax_1),
+    fig_frac_highq_1,
+    fig_recall_2 + ylim(ymin_2, ymax_2),
+    fig_precision_2 + ylim(ymin_2, ymax_2),
+    fig_frac_highq_2)
+}
+
+plot_sim_chr21_no_pop <- function(methods = "", df, aln1, aln2, angle) {
+  if (methods != "")
+    df <- df %>% filter(Method %in% methods)
+  
+  fig_mapped <- ggplot(df, aes(x=Method, y=NumMapped/NumReads, color = Aligner)) + 
+    geom_boxplot() + 
+    ylab("%Mapped") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  fig_recall <- ggplot(df, aes(x=Method, y=TruePositive/NumReads, color = Aligner)) + 
+    geom_boxplot() + 
+    ylab("%Correct") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  fig_precision <- ggplot(df, aes(x=Method, y=TruePositive/NumMapped, color = Aligner)) + 
+    geom_boxplot() + 
+    ylab("%Correctly Mapped") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+  fig_frac_highq <- ggplot(df, aes(x=Method, y=NumHighMapq/NumMapped, color = Aligner)) + 
+    geom_boxplot() + 
+    ylab("%High MAPQ") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+
+  if (angle != 0) {
+    grid_arrange_shared_legend(
+      T, 1, 1,
+      fig_mapped + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1),
+      fig_recall + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1),
+      fig_precision + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1),
+      fig_frac_highq + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1)
+      )
+  } else {
+    grid_arrange_shared_legend(
+      T, 1, 1,
+      fig_mapped + ylim(0.88, 1),
+      fig_recall + ylim(0.88, 1),
+      fig_precision + ylim(0.88, 1),
+      fig_frac_highq + ylim(0.88, 1)
+      )
+  }
+}
+
+df_sim_chr21_melt <- melt(df_sim_chr21 %>% mutate(FracMapped=NumMapped/NumReads, FracCorrect=TruePositive/NumReads, FracCorrectlyMapped=TruePositive/NumMapped, FracHighMapq=NumHighMapq/NumReads) %>% select(Inidvidual, Method, Aligner, FracMapped, FracCorrect, FracCorrectlyMapped, FracHighMapq))
+ggplot(df_sim_chr21_melt, aes(x=Method, y=value, color=Method)) + 
+  geom_boxplot() + 
+  facet_grid(Aligner~variable) +
+  ylab("") + xlab("") + labs(color="Method") + theme_bw() + 
+  theme(axis.title.x=element_text(vjust=0, hjust=0.45), axis.text.x=element_blank(), axis.ticks.x=element_blank(), legend.position = "right")
+
+
+# fig_sim_chr21_combined <- plot_sim_chr21_two_aln(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa", methods = c("CHM13-to-GRCh38", "GRCh38"))
+# fig_sim_chr21_combined_supp <- plot_sim_chr21_two_aln(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa")
+
+fig_sim_chr21_combined <- plot_sim_chr21_no_pop(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa", methods = c("CHM13-to-GRCh38", "GRCh38"), angle=0)
+fig_sim_chr21_combined_supp <- plot_sim_chr21_no_pop(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa", angle=20)
+
+if (save){
+  ggsave("figures/sim_chr21-combined.pdf", fig_sim_chr21_combined, width=11, height=6)
+  ggsave("figures/sim_chr21-combined-supp.pdf", fig_sim_chr21_combined_supp, width=11, height=6)
+}
+
+```
+
+## Alignment (real data)
+
+```{r aln_real}
+df_real_30x <- read.delim("v0.5.1/real_30x.log", header = TRUE, sep = "\t")
+fig_real_alignment <- ggplot(df_real_30x, aes(x=NumMapped/NumReads, y=NumHighMapQ/NumMapped, color = Method, shape = Sample)) + 
+    geom_point() +
+    ylab("%HighMapQ") + xlab("%Mapped") + labs(color="Method") + theme_bw() +
+    ylim(0.93, 1) + xlim(0.93, 1) + 
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
+
+if (save){
+  ggsave("figures/real_alignment.pdf", fig_real_alignment, width=6, height=5)
+}
+```
+
