@@ -111,7 +111,8 @@ fig_dv_indel_bars
 
 if (save){
   ggsave("figures/small_variants-bwa_dv.pdf", plot_bwa_dv, width=11, height=6)
-  ggsave("figures/small_variants-bwa_dv-SNP-bars.pdf", fig_dv_snp_bars, width=11, height=6)
+  ggsave("figures/small_variants-bwa_dv-SNP-bars.pdf", fig_dv_snp_bars+theme(legend.position = "right"), width=11, height=6)
+  # ggsave("figures/small_variants-bwa_dv-SNP-bars.pdf", fig_dv_snp_bars+theme(legend.position = "right"), width=11, height=6)
   ggsave("figures/small_variants-bwa_dv-INDEL-bars.pdf", fig_dv_indel_bars, width=11, height=6)
   write.csv(
     df_bwa_dv %>% filter(Filter=="PASS") %>% select(name, Type, Sample, TRUTH.TP, TRUTH.FN, QUERY.FP, METRIC.Recall, METRIC.Precision, METRIC.F1_Score),
@@ -128,22 +129,25 @@ read_csv <- function(fn, map) {
   df$name <- values(map, keys=name)
   return(df)
 }
-df_hg002_bwa_dv_cmrg <- do.call(rbind, lapply(c("v0.5.1/hg002/cmrg/grch38.summary.csv", "v0.5.1/hg002/cmrg/chm13_to_grch38.summary.csv"), read_csv, map=map_caller_name))
+df_hg002_bwa_dv_cmrg <- do.call(rbind, lapply(c("chm13v2/hg002/cmrg/grch38.summary.csv", "chm13v2/hg002/cmrg/chm13_to_grch38.summary.csv", "chm13v2/hg002/cmrg/grch37.summary.csv", "chm13v2/hg002/cmrg/chm13_to_grch37.summary.csv"), read_csv, map=map_caller_name))
+# df_hg002_bwa_dv_cmrg <- do.call(rbind, lapply(c("v0.5.1/hg002/cmrg/grch38.summary.csv", "v0.5.1/hg002/cmrg/chm13_to_grch38.summary.csv", "v0.5.1/hg002/cmrg/grch37.summary.csv", "v0.5.1/hg002/cmrg/chm13_to_grch37.summary.csv"), read_csv, map=map_caller_name))
 df_hg002_bwa_dv_cmrg$name = factor(df_hg002_bwa_dv_cmrg$name, levels=levelnames)
 
 df_hg002_bwa_dv_cmrg_melt <- melt(df_hg002_bwa_dv_cmrg %>% select(name, Type, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))#metric_orig))
 df_hg002_bwa_dv_cmrg_melt$variable <- factor(values(map_metrics, keys=df_hg002_bwa_dv_cmrg_melt$variable), levels = metric_names)
-# df_hg002_bwa_dv_cmrg_melt$GrcSystem <- factor(values(map_grc_system, keys=df_hg002_bwa_dv_cmrg_melt$name))
+df_hg002_bwa_dv_cmrg_melt$GrcSystem <- factor(values(map_grc_system, keys=df_hg002_bwa_dv_cmrg_melt$name))
 fig_hg002_cmrg <- ggplot(df_hg002_bwa_dv_cmrg_melt, aes(x=variable, y=value, fill=name)) + 
     geom_bar(stat="identity", position=position_dodge()) +
     scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
-    # facet_grid(GrcSystem~Sample) +
-    facet_grid(Type~.) +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.93,1)) +
+    facet_grid(GrcSystem~Type) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.9,1)) +
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "none")
 fig_hg002_cmrg 
 
 # grid_arrange_shared_legend(TRUE, 2, 1, fig_dv_snp_bars, fig_hg002_cmrg)
+
+df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
 
 if (save){
   ggsave("figures/small_variants-bwa_dv-cmrg.pdf", fig_hg002_cmrg, width=6, height=6)
@@ -220,8 +224,9 @@ if (save){
 stratify_subsets <- 
 # Mixed
 # c("*", "alldifficultregions", "alllowmapandsegdupregions", "lowmappabilityall", "segdups")
+  c("alldifficultregions", "lowmappabilityall", "segdups")
   c("alldifficultregions", "lowmappabilityall", "segdups", "allOtherDifficultregions")
-  c("*", "alldifficultregions", "lowmappabilityall", "segdups", "allOtherDifficultregions")
+  # c("*", "alldifficultregions", "lowmappabilityall", "segdups", "allOtherDifficultregions")
   # c("*", "allOtherDifficultregions", "alldifficultregions", "alllowmapandsegdupregions", "segdups")
 # FunctionalRegions
 # c("refseq_cds", "notinrefseq_cds")
@@ -243,22 +248,22 @@ df_hg002_bwa_dv_stratify <- df_hg002_bwa_dv_stratify %>% filter(Filter == "PASS"
 df_hg002_bwa_dv_stratify$name = factor(df_hg002_bwa_dv_stratify$name, levels=levelnames)
 df_hg002_bwa_dv_stratify$Subset.Rename <- factor(values(map_strat_subsets, keys=df_hg002_bwa_dv_stratify$Subset), levels = strat_names)
 
-df_hg002_bwa_dv_stratify_melt <- melt(df_hg002_bwa_dv_stratify %>% select(name, Type, Subtype, Subset.Rename, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))
-df_hg002_bwa_dv_stratify_melt$variable <- factor(values(map_metrics, keys=df_hg002_bwa_dv_stratify_melt$variable), levels = metric_names)
-df_hg002_bwa_dv_stratify_melt$GrcSystem <- factor(values(map_grc_system, keys=df_hg002_bwa_dv_stratify_melt$name))
+# df_hg002_bwa_dv_stratify_melt <- melt(df_hg002_bwa_dv_stratify %>% select(name, Type, Subtype, Subset.Rename, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))
+# df_hg002_bwa_dv_stratify_melt$variable <- factor(values(map_metrics, keys=df_hg002_bwa_dv_stratify_melt$variable), levels = metric_names)
+# df_hg002_bwa_dv_stratify_melt$GrcSystem <- factor(values(map_grc_system, keys=df_hg002_bwa_dv_stratify_melt$name))
 
-fig_hg002_bwa_dv_stratify_bars <- ggplot(df_hg002_bwa_dv_stratify_melt, aes(x=variable, y=value, fill=name)) + 
-    geom_bar(stat="identity", position=position_dodge()) +
-    # stat_identity(geom = "text", colour = "white", size = 1.5, aes(label = value), position=position_stack(vjust=-0.05), angle=90) +
-    # facet_grid(GrcSystem~Sample) +
-    facet_grid(GrcSystem+Type~Subset.Rename) +
-    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() +
-    coord_cartesian(ylim=c(max((min(df_hg002_bwa_dv_stratify_melt$value)-0.02), 0), 1)) +
-    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom")
+# fig_hg002_bwa_dv_stratify_bars <- ggplot(df_hg002_bwa_dv_stratify_melt, aes(x=variable, y=value, fill=name)) + 
+#     geom_bar(stat="identity", position=position_dodge()) +
+#     # stat_identity(geom = "text", colour = "white", size = 1.5, aes(label = value), position=position_stack(vjust=-0.05), angle=90) +
+#     # facet_grid(GrcSystem~Sample) +
+#     facet_grid(GrcSystem+Type~Subset.Rename) +
+#     scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+#     ylab("") + xlab("") + labs(fill="Method") + theme_bw() +
+#     coord_cartesian(ylim=c(max((min(df_hg002_bwa_dv_stratify_melt$value)-0.02), 0), 1)) +
+#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom")
 # fig_hg002_bwa_dv_stratify_bars
 
-df_hg002_bwa_dv_stratify <- df_hg002_bwa_dv_stratify %>% mutate(h38 = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "h38", "h37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
+df_hg002_bwa_dv_stratify <- df_hg002_bwa_dv_stratify %>% mutate(h38 = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
 
 fig_hg002_bwa_dv_stratify_scatter <- ggplot(df_hg002_bwa_dv_stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
   geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.075, "inches"))) +
@@ -271,23 +276,23 @@ fig_hg002_bwa_dv_stratify_scatter <- ggplot(df_hg002_bwa_dv_stratify, aes(y=METR
         legend.position = "bottom")
 fig_hg002_bwa_dv_stratify_scatter
 
-fig_hg002_bwa_dv_stratify_scatter = ggplot(df_hg002_bwa_dv_stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
+fig_hg002_bwa_dv_stratify_scatter_fixed <- ggplot(df_hg002_bwa_dv_stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
   geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.075, "inches"))) +
   geom_point() + 
-  facet_grid(h38~Subset.Rename, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
+  facet_grid(~h38+Subset.Rename, labeller = label_wrap_gen(multi_line=FALSE)) +
+  # facet_wrap(h38~Subset.Rename, ncol = 6, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
+  # facet_grid(h38~Subset.Rename, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
   scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
   ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
   theme(axis.title.x=element_text(vjust=0, hjust=0.45),
         axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
-        legend.position = "bottom")
-fig_hg002_bwa_dv_stratify_scatter
-
-# library(ggbreak)
-# fig_hg002_bwa_dv_stratify_scatter + scale_y_break(c(0.71, 0.83)) 
+        legend.position = "right")
+fig_hg002_bwa_dv_stratify_scatter_fixed
 
 if (save){
   ggsave("figures/small_variants-bwa_dv-stratify-mixed-bar.pdf", fig_hg002_bwa_dv_stratify_bars, width=10, height=8)
   ggsave("figures/small_variants-bwa_dv-stratify-mixed-scatter-facet.pdf", fig_hg002_bwa_dv_stratify_scatter, width=8, height=6)
+  ggsave("figures/small_variants-bwa_dv-stratify-mixed-scatter-facet-fixed.pdf", fig_hg002_bwa_dv_stratify_scatter_fixed, width=11, height=4)
 }
 
 ```
@@ -295,124 +300,6 @@ if (save){
 
 
 ## Alignment (simulated data)
-
-```{r aln_sim_chr21_two_aln}
-# df_sim_chr21 <- read.delim("v0.5.1/sim_chr21/all_masked.tsv", header = TRUE, sep = "\t")
-# df_sim_chr21$Method <- factor(values(map_caller_name, keys=df_sim_chr21$Method), levels = printednames)
-# df_sim_chr21$Aligner <- factor(values(map_aln_name, keys=df_sim_chr21$Aligner), levels = aln_names)
-# 
-# plot_sim_chr21_two_aln <- function(methods = "", df, aln1, aln2) {
-#   if (methods != ""){
-#     df <- df %>% filter(Method %in% methods)
-#   }
-#   fig_recall_1 <- ggplot(df %>% filter(Aligner == aln1), aes(x=Method, y=TruePositive/NumReads, color = SuperPopulation)) + 
-#     geom_boxplot() + 
-#     ylab("Recall") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-#   fig_precision_1 <- ggplot(df %>% filter(Aligner == aln1), aes(x=Method, y=TruePositive/NumMapped, color = SuperPopulation)) + 
-#     geom_boxplot() + 
-#     ylab("Precision") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-#   fig_frac_highq_1 <- ggplot(df %>% filter(Aligner == aln1), aes(x=Method, y=NumHighMapq/NumMapped, color = SuperPopulation)) + 
-#     geom_boxplot() + 
-#     ylab("%HighMapQ") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-# 
-#   ymin_1 = min(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
-#   ymax_1 = max(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
-#   ydiff_1 = ymax_1 - ymin_1
-#   ymin_1 = ymin_1 - 0.05 * ydiff_1
-#   ymax_1 = ymax_1 + 0.05 * ydiff_1
-#   
-#   fig_recall_2 <- ggplot(df %>% filter(Aligner == aln2), aes(x=Method, y=TruePositive/NumReads, color = SuperPopulation)) + 
-#     geom_boxplot() + 
-#     ylab("Recall") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-#   fig_precision_2 <- ggplot(df %>% filter(Aligner == aln2), aes(x=Method, y=TruePositive/NumMapped, color = SuperPopulation)) + 
-#     geom_boxplot() + 
-#     ylab("Precision") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-#   fig_frac_highq_2 <- ggplot(df %>% filter(Aligner == aln2), aes(x=Method, y=NumHighMapq/NumMapped, color = SuperPopulation)) + 
-#     geom_boxplot() + 
-#     ylab("%HighMapQ") + xlab("Method") + labs(color="Super Population") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-# 
-#   ymin_2 = min(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
-#   ymax_2 = max(df$TruePositive / df$NumReads, df$TruePositive / df$NumMapped)
-#   ydiff_2 = ymax_2 - ymin_2
-#   ymin_2 = ymin_2 - 0.05 * ydiff_2
-#   ymax_2 = ymax_2 + 0.05 * ydiff_2
-#   
-#   grid_arrange_shared_legend(
-#     T, 1, 1,
-#     fig_recall_1 + ylim(ymin_1, ymax_1),
-#     fig_precision_1 + ylim(ymin_1, ymax_1),
-#     fig_frac_highq_1,
-#     fig_recall_2 + ylim(ymin_2, ymax_2),
-#     fig_precision_2 + ylim(ymin_2, ymax_2),
-#     fig_frac_highq_2)
-# }
-# 
-# plot_sim_chr21_no_pop <- function(methods = "", df, aln1, aln2, angle) {
-#   if (methods != "")
-#     df <- df %>% filter(Method %in% methods)
-#   
-#   fig_mapped <- ggplot(df, aes(x=Method, y=NumMapped/NumReads, color = Aligner)) + 
-#     geom_boxplot() + 
-#     ylab("%Mapped") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-#   fig_recall <- ggplot(df, aes(x=Method, y=TruePositive/NumReads, color = Aligner)) + 
-#     geom_boxplot() + 
-#     ylab("%Correct") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-#   fig_precision <- ggplot(df, aes(x=Method, y=TruePositive/NumMapped, color = Aligner)) + 
-#     geom_boxplot() + 
-#     ylab("%Correctly Mapped") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-#   fig_frac_highq <- ggplot(df, aes(x=Method, y=NumHighMapq/NumMapped, color = Aligner)) + 
-#     geom_boxplot() + 
-#     ylab("%High MAPQ") + xlab("Method") + labs(color="Aligner") + theme_bw() + 
-#     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right")
-# 
-#   if (angle != 0) {
-#     grid_arrange_shared_legend(
-#       T, 1, 1,
-#       fig_mapped + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1),
-#       fig_recall + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1),
-#       fig_precision + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1),
-#       fig_frac_highq + theme(axis.text.x = element_text(angle = angle, vjust = 1, hjust=0.8)) + ylim(0.88, 1)
-#       )
-#   } else {
-#     grid_arrange_shared_legend(
-#       T, 1, 1,
-#       fig_mapped + ylim(0.88, 1),
-#       fig_recall + ylim(0.88, 1),
-#       fig_precision + ylim(0.88, 1),
-#       fig_frac_highq + ylim(0.88, 1)
-#       )
-#   }
-# }
-# 
-# df_sim_chr21_melt <- melt(df_sim_chr21 %>% mutate(FracMapped=NumMapped/NumReads, FracCorrect=TruePositive/NumReads, FracCorrectlyMapped=TruePositive/NumMapped, FracHighMapq=NumHighMapq/NumReads, FracNonFalseDupRegions=1-NumFalseRegion/NumReads) %>% select(Individual, Method, Aligner, FracMapped, FracCorrect, FracCorrectlyMapped, FracHighMapq, FracNonFalseDupRegions))
-# ggplot(df_sim_chr21_melt, aes(x=Method, y=value, color=Method)) + 
-#   geom_boxplot() + 
-#   facet_grid(Aligner~variable) +
-#   ylab("") + xlab("") + labs(color="Method") + theme_bw() + 
-#   theme(axis.title.x=element_text(vjust=0, hjust=0.45), axis.text.x=element_blank(), axis.ticks.x=element_blank(), legend.position = "right")
-# 
-# 
-# # fig_sim_chr21_combined <- plot_sim_chr21_two_aln(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa", methods = c("CHM13-to-GRCh38", "GRCh38"))
-# # fig_sim_chr21_combined_supp <- plot_sim_chr21_two_aln(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa")
-# 
-# fig_sim_chr21_combined <- plot_sim_chr21_no_pop(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa", methods = c("CHM13-to-GRCh38", "GRCh38"), angle=0)
-# fig_sim_chr21_combined_supp <- plot_sim_chr21_no_pop(df = df_sim_chr21, aln1 = "bt2", aln2 = "bwa", angle=20)
-# 
-# if (save){
-#   ggsave("figures/sim_chr21-combined.pdf", fig_sim_chr21_combined, width=11, height=6)
-#   ggsave("figures/sim_chr21-combined-supp.pdf", fig_sim_chr21_combined_supp, width=11, height=6)
-# }
-
-```
 
 ```{r sim_chr21_liftable}
 # df_sim_chr21_liftable <- read.delim("v0.5.1/sim_chr21/all.tsv", header = TRUE, sep = "\t")
@@ -433,43 +320,134 @@ if (save){
 }
 ```
 
-```{r load_sim_chr21_NA12878}
-# df_sim_chr21_NA12878_bwa_lev <- read.delim("sim_NA12878/NA12878-bwa-lev.tsv", header = TRUE, sep = "\t")
-# df_sim_chr21_NA12878_bwa_lev$method <- "CHM13-to-GRCh38"
-# df_sim_chr21_NA12878_bwa_lev$aligner <- "BWA MEM"
-# 
-# df_sim_chr21_NA12878_bwa_lev_ns <- read.delim("sim_NA12878/NA12878-bwa-lev-ns.tsv", header = TRUE, sep = "\t")
-# df_sim_chr21_NA12878_bwa_lev_ns$method <- "CHM13-to-GRCh38 (no suppress)"
-# df_sim_chr21_NA12878_bwa_lev_ns$aligner <- "BWA MEM"
-# 
-# # df_sim_chr21_NA12878_bwa_lev_lm <- read.delim("sim_NA12878/NA12878-bwa-lev-lm.tsv", header = TRUE, sep = "\t")
-# # df_sim_chr21_NA12878_bwa_lev_lm$method <- "CHM13-to-GRCh38 (all low-map)"
-# # df_sim_chr21_NA12878_bwa_lev_lm$aligner <- "BWA MEM"
-# 
-# 
-# df_sim_chr21_NA12878_bwa_grc <- read.delim("sim_NA12878/NA12878-bwa-grc.tsv", header = TRUE, sep = "\t")
-# df_sim_chr21_NA12878_bwa_grc$method <- "GRCh38"
-# df_sim_chr21_NA12878_bwa_grc$aligner <- "BWA MEM"
-# 
-# df_sim_chr21_NA12878 <- rbind(df_sim_chr21_NA12878_bwa_lev_ns, df_sim_chr21_NA12878_bwa_lev, df_sim_chr21_NA12878_bwa_grc)
-# 
-# df_sim_chr21_NA12878 <- df_sim_chr21_NA12878 %>% mutate(correct = (rname == gold_rname & abs(pos_noclip - gold_pos) <= 10), Positive = (correct) * 1, Negative = (correct == FALSE & pos >= 0) * 1, NoCall = (pos < 0) * 1)
-# # df_sim_chr21_NA12878 <- df_sim_chr21_NA12878 %>% mutate(correct = (rname == gold_rname & abs(pos - gold_pos) <= 10), Positive = (correct) * 1, Negative = (correct == FALSE & pos >= 0) * 1, NoCall = (pos < 0) * 1)
+```{r sim_roc}
+read_sim_df <- function(x, map_caller_name, map_aln_name) {
+  nx = strsplit(basename(file_path_sans_ext(x)), "-")[[1]]
+  # aln = nx[2]
+  # ref = nx[3]
+  aln = values(map_aln_name, keys=nx[2])
+  ref = values(map_caller_name, keys=nx[3])
+  df <- read.delim(x, header = TRUE, sep = "\t") %>% mutate(ref = ref, aligner = aln, method = paste(aln, ref, sep=", "))
+}
 
-# df_sim_chr21_NA12878_bwa_lev <- read.delim("sim_NA12878/chr21/NA12878-bwa-lev.tsv", header = TRUE, sep = "\t") %>% mutate(method = "CHM13-to-GRCh38", aligner = "BWA MEM")
-# df_sim_chr21_NA12878_bwa_grc <- read.delim("sim_NA12878/chr21/NA12878-bwa-grch38.tsv", header = TRUE, sep = "\t") %>% mutate(method = "GRCh38", aligner = "BWA MEM")
-# df_sim_chr21_NA12878_bt2_lev <- read.delim("sim_NA12878/chr21/NA12878-bt2-lev.tsv", header = TRUE, sep = "\t") %>% mutate(method = "CHM13-to-GRCh38", aligner = "Bowtie 2")
-# df_sim_chr21_NA12878_bt2_grc <- read.delim("sim_NA12878/chr21/NA12878-bt2-grch38.tsv", header = TRUE, sep = "\t") %>% mutate(method = "GRCh38", aligner = "Bowtie 2")
-df_sim_chr21_NA12878_bwa_lev <- read.delim("sim_NA12878/chr21/NA12878-bwa-lev.tsv", header = TRUE, sep = "\t") %>% mutate(ref = "CHM13-to-GRCh38", aligner = "BWA MEM", method = "BWA MEM, CHM13-to-GRCh38")
-df_sim_chr21_NA12878_bwa_grc <- read.delim("sim_NA12878/chr21/NA12878-bwa-grch38.tsv", header = TRUE, sep = "\t") %>% mutate(ref = "GRCh38", aligner = "BWA MEM", method = "BWA MEM, GRCh38")
-df_sim_chr21_NA12878_bt2_lev <- read.delim("sim_NA12878/chr21/NA12878-bt2-lev.tsv", header = TRUE, sep = "\t") %>% mutate(ref = "CHM13-to-GRCh38", aligner = "Bowtie 2", method = "Bowtie 2, CHM13-to-GRCh38")
-df_sim_chr21_NA12878_bt2_grc <- read.delim("sim_NA12878/chr21/NA12878-bt2-grch38.tsv", header = TRUE, sep = "\t") %>% mutate(ref = "GRCh38", aligner = "Bowtie 2", method = "Bowtie 2, GRCh38")
+build_sim_aln_roc <- function(df) {
+  # Adapted from https://github.com/vgteam/giraffe-sv-paper/blob/master/scripts/plotting/plot-roc.R
+  dat.roc <- df %>%
+      group_by(method, mapq) %>%
+      summarise(Positive = sum(Positive), Negative = sum(Negative), NoCall = sum(NoCall)) %>%
+      arrange(-mapq) %>%
+      mutate(Total=sum(Positive+Negative+NoCall)) %>%
+      mutate(TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total)
+  
+  # Here we define "repetitive" as a read that is mapped with low MAPQ when using GRCh38
+  lowmq_ids <- df %>% filter(mapq < 10, ref == "GRCh38")
+  
+  dat.roc <- dat.roc %>% mutate(repetitive = "All")
+  total.reads <- max(dat.roc$Total)
+  
+  dat.roc.split <- df %>% mutate(repetitive = ifelse(X %in% lowmq_ids$X, "Repetitive", "Unique")) %>%
+      group_by(method, mapq, repetitive) %>%
+      summarise(Positive = sum(Positive), Negative = sum(Negative)) %>%
+      arrange(repetitive, -mapq) %>%
+      mutate(Total=total.reads) #%>%
+      # mutate(TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total)
+  
+  # summarise_split_tpr_fpr <- function(df, aln, ref, repetitive) {
+  #   method = paste(aln, ref, sep = ", ")
+  #   return (df %>% ungroup %>% filter(method == method, repetitive == repetitive) %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total))
+  # }
+  # dat.roc.split <- do.call(
+  #   rbind, mapply(
+  #     summarise_split_tpr_fpr, 
+  #     df = dat.roc.split,
+  #     aln = c("Bowtie 2", "BWA MEM"), 
+  #     ref = c("GRCh38", "CHM13-to-GRCh38"),
+  #     repetitive = c("Unique", "Repetitive")))
+  
+  dat.roc.split.merged <- rbind(
+    dat.roc,
+    dat.roc.split %>% ungroup %>% filter(method == "Bowtie 2, GRCh38", repetitive == "Unique") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total),
+    dat.roc.split %>% ungroup %>% filter(method == "Bowtie 2, CHM13-to-GRCh38", repetitive == "Unique") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total),
+    dat.roc.split %>% ungroup %>% filter(method == "Bowtie 2, GRCh38", repetitive == "Repetitive") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total),
+    dat.roc.split %>% ungroup %>% filter(method == "Bowtie 2, CHM13-to-GRCh38", repetitive == "Repetitive") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total),
+    dat.roc.split %>% ungroup %>% filter(method == "BWA-MEM, GRCh38", repetitive == "Unique") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total),
+    dat.roc.split %>% ungroup %>% filter(method == "BWA-MEM, CHM13-to-GRCh38", repetitive == "Unique") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total),
+    dat.roc.split %>% ungroup %>% filter(method == "BWA-MEM, GRCh38", repetitive == "Repetitive") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total),
+    dat.roc.split %>% ungroup %>% filter(method == "BWA-MEM, CHM13-to-GRCh38", repetitive == "Repetitive") %>% mutate(Total = sum(Positive) + sum(Negative), TPR = cumsum(Positive) / Total, FPR = cumsum(Negative) / Total))
+  
+  
+  dat.roc.split.merged$ref <- ifelse(dat.roc.split.merged$method %in% c("BWA-MEM, GRCh38", "Bowtie 2, GRCh38"), "GRCh38", "CHM13-to-GRCh38")
+  dat.roc.split.merged$aligner <- ifelse(dat.roc.split.merged$method %in% c("BWA-MEM, GRCh38", "BWA-MEM, CHM13-to-GRCh38"), "BWA-MEM", "Bowtie 2")
+  return(dat.roc.split.merged)
+}
 
-df_sim_chr21_NA12878 <- rbind(df_sim_chr21_NA12878_bwa_lev, df_sim_chr21_NA12878_bwa_grc, df_sim_chr21_NA12878_bt2_lev, df_sim_chr21_NA12878_bt2_grc) %>% mutate(
-  correct = (rname == gold_rname & abs(pos_noclip - gold_pos) <= 10),
-  Positive = (correct) * 1,
-  Negative = (correct == FALSE & pos >= 0) * 1,
-  NoCall = (pos < 0) * 1)
+plot_sim_aln_roc <- function(df.roc) {
+  ggplot(df.roc, aes( x= FPR, y = TPR, color = ref, label=mapq)) +
+    geom_line() +
+    geom_text_repel(data = subset(df.roc, mapq %in% c(60, 40, 0)), size=3.5, point.padding=unit(0.7, "lines"), segment.alpha=I(1/2.5), show.legend=FALSE) +
+    geom_point(aes(size=Positive+Negative)) +
+    scale_color_manual(values = c("#FC4E07", "#00AFBB", "#FC4E07", "#00AFBB")) +
+    # scale_color_manual(values=colors, guide=guide_legend(title=NULL, ncol=2)) +
+    scale_size_continuous("number", guide=guide_legend(title=NULL, ncol=4)) +
+    scale_x_log10() +
+    theme_bw() +
+    theme(legend.position = "bottom") + labs(color="Method") +
+    facet_wrap(aligner~repetitive, scales = "free", labeller = label_wrap_gen(multi_line = FALSE))
+}
+  
+dat.aln.chr21 <- do.call(
+  rbind, lapply(
+    c("sim_NA12878/chr21/NA12878-bwa-grch38.tsv", "sim_NA12878/chr21/NA12878-bwa-chm13_to_grch38.tsv",
+      "sim_NA12878/chr21/NA12878-bt2-grch38.tsv", "sim_NA12878/chr21/NA12878-bt2-chm13_to_grch38.tsv"),
+    read_sim_df, map_caller_name=map_caller_name, map_aln_name=map_aln_name))
+dat.aln.chr21 <- dat.aln.chr21 %>% 
+  mutate(
+    correct = (rname == gold_rname & abs(pos_noclip - gold_pos) <= 10),
+    Positive = (correct) * 1,
+    Negative = (correct == FALSE & pos >= 0) * 1,
+    NoCall = (pos < 0) * 1)
+
+dat.roc.sim.chr21 <- build_sim_aln_roc(dat.aln.chr21)
+fig.roc.sim.chr21 <- plot_sim_aln_roc(dat.roc.sim.chr21)
+fig.roc.sim.chr21
+
+dat.aln.chr20 <- do.call(
+  rbind, lapply(
+    c("sim_NA12878/chr20/NA12878-bwa-grch38.tsv", "sim_NA12878/chr20/NA12878-bwa-chm13_to_grch38.tsv",
+      "sim_NA12878/chr20/NA12878-bt2-grch38.tsv", "sim_NA12878/chr20/NA12878-bt2-chm13_to_grch38.tsv"),
+    read_sim_df, map_caller_name=map_caller_name, map_aln_name=map_aln_name))
+dat.aln.chr20 <- dat.aln.chr20 %>% 
+  mutate(
+    correct = (rname == gold_rname & abs(pos_noclip - gold_pos) <= 10),
+    Positive = (correct) * 1,
+    Negative = (correct == FALSE & pos >= 0) * 1,
+    NoCall = (pos < 0) * 1)
+
+dat.roc.sim.chr20 <- build_sim_aln_roc(dat.aln.chr20)
+fig.roc.sim.chr20 <- plot_sim_aln_roc(dat.roc.sim.chr20)
+fig.roc.sim.chr20
+
+dat.roc.sim <- rbind(dat.roc.sim.chr21 %>% mutate(Chrom="chr21"), dat.roc.sim.chr20 %>% mutate(Chrom="chr20"))
+fig.roc.sim <- ggplot(dat.roc.sim, aes( x= FPR, y = TPR, color = ref, label=mapq)) +
+    geom_line() +
+    geom_text_repel(data = subset(dat.roc.sim, mapq %in% c(60, 40, 0)), size=3.5, point.padding=unit(0.7, "lines"), segment.alpha=I(1/2.5), show.legend=FALSE) +
+    geom_point(aes(size=Positive+Negative)) +
+    scale_color_manual(values = c("#FC4E07", "#00AFBB", "#FC4E07", "#00AFBB")) +
+    # scale_color_manual(values=colors, guide=guide_legend(title=NULL, ncol=2)) +
+    scale_size_continuous("number", guide=guide_legend(title=NULL, ncol=4)) +
+    # scale_x_log10() +
+    theme_bw() +
+    theme(legend.position = "bottom") + labs(color="Method") +
+    facet_wrap(Chrom+aligner~repetitive, scales = "free", labeller = label_wrap_gen(multi_line = FALSE, width = 40), ncol = 3)
+fig.roc.sim
+
+if (save){
+  ggsave("figures/sim_chr21-roc-mixed.pdf", fig.roc.sim.chr21, width=11, height=6)
+  ggsave("figures/sim_chr20-roc-mixed.pdf", fig.roc.sim.chr20, width=11, height=6)
+  ggsave("figures/sim-roc-mixed.pdf", fig.roc.sim, width=10, height=12)
+  ggsave("figures/sim-roc-mixed.png", fig.roc.sim, width=10, height=12)
+  ggsave("figures/sim-roc-mixed-no_logx.png", fig.roc.sim, width=10, height=12)
+}
 ```
 
 ```{r sim_chr21_NA12878}
@@ -719,4 +697,35 @@ if (save){
 }
 ```
 
+
+## Computational efficiency
+```{r comp_eff}
+task_id <- c("bwa_mem", "leviosam_lift", "samtools_sort", "leviosam_collate", "samtools_view", "leviosam_cherry_pick", "samtools_cat")
+printed_task_id <- c("Alignment", "Lift", "Sort", "Collate", "Other", "Merge", "Other")
+printed_task_id.level <- c("Alignment", "Lift", "Sort", "Collate", "Merge", "Other")
+map_task <- hash()
+for (i in seq(1, length(task_id))){
+  map_task[[task_id[i]]] <- printed_task_id[i]}
+
+dat.comp_eff.bwa.grch38 <- read.delim("csvs/measure-hg002-bwa-grch38.tsv", header = TRUE, sep = "\t") %>% mutate(ref = "GRCh38")
+dat.comp_eff.bwa.grch37 <- read.delim("csvs/measure-hg002-bwa-grch37.tsv", header = TRUE, sep = "\t") %>% mutate(ref = "GRCh37")
+dat.comp_eff.bwa <- rbind(dat.comp_eff.bwa.grch37, dat.comp_eff.bwa.grch38)
+
+dat.comp_eff.bwa$Method = factor(values(map_caller_name, keys=dat.comp_eff.bwa$Method), levels = levelnames)
+dat.comp_eff.bwa$Task = factor(values(map_task, keys=dat.comp_eff.bwa$Task), levels = printed_task_id.level)
+
+fig.comp_eff.bwa.speed <- ggplot(dat.comp_eff.bwa, aes(x=Method, y=CPU.time..s., fill = Task, color = Task)) + geom_bar(stat="identity", position=position_stack(), width = 0.5) + ylab("CPU Time (s)") + xlab("") + theme_bw() + theme(legend.position = "bottom") + guides(fill = guide_legend(nrow = 1))
+fig.comp_eff.bwa.speed
+
+fig.comp_eff.bwa.memory <- ggplot(dat.comp_eff.bwa, aes(x=Method, y=Max.RSS..KB./1e6, fill = Task)) + geom_bar(stat="identity", position=position_dodge2(preserve = "single")) + ylab("Peak Memeory Usage (GB)") + xlab("") + theme_bw() + theme(legend.position = "bottom") + guides(fill = guide_legend(nrow = 1))
+fig.comp_eff.bwa.memory
+
+if (save){
+  ggsave("figures/efficiency_bwa_speed.pdf", fig.comp_eff.bwa.speed, width=6, height=5)
+  ggsave("figures/efficiency_bwa_memory.pdf", fig.comp_eff.bwa.memory, width=6, height=5)
+  
+  ggsave("figures/efficiency_bwa_speed.png", fig.comp_eff.bwa.speed, width=6, height=5)
+  ggsave("figures/efficiency_bwa_memory.png", fig.comp_eff.bwa.memory, width=6, height=5)
+}
+```
 
