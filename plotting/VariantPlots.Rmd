@@ -1,0 +1,244 @@
+---
+title: "VariantPlots"
+author: "Nae-Chyun"
+date: "3/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
+library(reshape2)
+library(RColorBrewer)
+library(hash)
+library(ggridges)
+library(scales)
+library(ggrepel)
+source("helper.R")
+```
+
+```{r global}
+save <- FALSE
+
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
+
+# make precision-recall curve
+pr <- T
+
+# filenames <- c("chm13_to_grch38", "grch38", "grch38_masked", "chm13_to_hg19", "hg19")
+# printednames <- c("CHM13-to-GRCh38", "GRCh38", "GRCh38-masked", "CHM13-to-GRCh37", "GRCh37")
+filenames <- c("grch38", "grch38_masked", "chm13_to_grch38", "hg19", "chm13_to_hg19", "grch37", "chm13_to_grch37")
+printednames <- c("GRCh38", "GRCh38-masked", "CHM13-to-GRCh38", "GRCh37", "CHM13-to-GRCh37", "GRCh37", "CHM13-to-GRCh37")
+levelnames <- c("GRCh38", "GRCh38-masked", "CHM13-to-GRCh38", "GRCh37", "CHM13-to-GRCh37")
+map_caller_name <- hash()
+for (i in seq(1, length(filenames))){
+  map_caller_name[[filenames[i]]] <- printednames[i]}
+
+grc_systems <- c("GRCh38", "GRCh38", "GRCh38", "GRCh37", "GRCh37", "GRCh37", "GRCh37", "GRCh37")
+map_grc_system <- hash()
+for (i in seq(1, length(printednames))){
+  map_grc_system[[printednames[i]]] <- grc_systems[i]}
+
+aln_short <- c("bt2", "bwa")
+aln_names <- c("Bowtie 2", "BWA-MEM")
+map_aln_name <- hash()
+for (i in seq(1, length(aln_short))){
+  map_aln_name[[aln_short[i]]] <- aln_names[i]}
+
+metric_orig <- c("METRIC.Recall", "METRIC.Precision", "METRIC.F1_Score", "TRUTH.TP", "TRUTH.FN", "QUERY.FP")
+metric_names <- c("Recall", "Precision", "F1", "TP", "FN", "FP")
+map_metrics <- hash()
+for (i in seq(1, length(metric_orig))){
+  map_metrics[[metric_orig[i]]] <- metric_names[i]}
+```
+
+```{r small_variant_wgs_dv, message=FALSE}
+df.hg001.bwa.dv <- do.call(rbind, lapply(c("chm13v2/hg001/grch38.summary.csv", "chm13v2/hg001/chm13_to_grch38.summary.csv", "chm13v2/hg001/hg19.summary.csv", "chm13v2/hg001/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
+df.hg002.bwa.dv <- do.call(rbind, lapply(c("chm13v2/hg002/grch38.summary.csv", "chm13v2/hg002/chm13_to_grch38.summary.csv", "chm13v2/hg002/hg19.summary.csv", "chm13v2/hg002/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
+df.hg005.bwa.dv <- do.call(rbind, lapply(c("chm13v2/hg005/grch38.summary.csv", "chm13v2/hg005/chm13_to_grch38.summary.csv", "chm13v2/hg005/hg19.summary.csv", "chm13v2/hg005/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
+
+df.hg001.bwa.dv$Sample <- "HG001"
+df.hg002.bwa.dv$Sample <- "HG002"
+df.hg005.bwa.dv$Sample <- "HG005"
+df.bwa.dv <- rbind(df.hg002.bwa.dv, df.hg001.bwa.dv, df.hg005.bwa.dv) %>% filter(Filter == "PASS")
+df.bwa.dv$Sample <- factor(df.bwa.dv$Sample, levels=c("HG001", "HG002", "HG005"))
+df.bwa.dv$name <- factor(df.bwa.dv$name, levels=levelnames)
+df.bwa.dv$name_rev <- factor(df.bwa.dv$name, levels=rev(levelnames))
+df.bwa.dv$GrcSystem <- ifelse(df.bwa.dv$name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37")
+
+# df.bwa.dv.melt <- melt(df.bwa.dv %>% select(name, Sample, Type, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))
+df.bwa.dv.melt <- melt(df.bwa.dv %>% select(name, Sample, Type, METRIC.F1_Score))
+df.bwa.dv.melt$variable <- factor(hash::values(map_metrics, keys=df.bwa.dv.melt$variable), levels = metric_names)
+df.bwa.dv.melt$GrcSystem <- factor(hash::values(map_grc_system, keys=df.bwa.dv.melt$name))
+fig.bwa.dv.f1 <- ggplot(df.bwa.dv.melt, aes(x=variable, y=value, fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+    facet_grid(GrcSystem~Type+Sample) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.99,1)) +
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.bwa.dv.f1
+
+df.bwa.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+
+df.bwa.dv <- df.bwa.dv %>% mutate(GrcSystem = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
+
+fig.bwa.dv.scatter <- ggplot(df.bwa.dv, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
+  geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.055, "inches"))) +
+  geom_point() + 
+  facet_grid(~GrcSystem+Sample, labeller = label_wrap_gen(multi_line=FALSE)) +
+  scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+  coord_cartesian(ylim=c(0.986,1), xlim=c(0.996,1)) +
+  ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
+  theme(axis.title.x=element_text(vjust=0, hjust=0.45),
+        axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
+        legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.bwa.dv.scatter
+
+if (save){
+  ggsave("figures/0309/small_variants-bwa_dv-f1.pdf", fig.bwa.dv.f1
+         + theme(legend.position = "none")
+         , width=4, height=4)
+  ggsave("figures/0309/small_variants-bwa_dv-scatter.pdf", fig.bwa.dv.scatter
+         + theme(legend.position = "none")
+         , width=8, height=4)
+  # write.csv(
+  #   df.bwa.dv %>% filter(Filter=="PASS") %>% select(name, Type, Sample, TRUTH.TP, TRUTH.FN, QUERY.FP, METRIC.Recall, METRIC.Precision, METRIC.F1_Score),
+  #   "csvs/small_variants-bwa_dv.csv", row.names = FALSE)
+
+}
+```
+
+```{r small_variant_wgs_gatk, message=FALSE}
+df.hg001.bwa.gatk <- do.call(rbind, lapply(c("chm13v2-gatk/hg001/grch38.summary.csv", "chm13v2-gatk/hg001/chm13_to_grch38.summary.csv", "chm13v2-gatk/hg001/hg19.summary.csv", "chm13v2-gatk/hg001/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
+df.hg002.bwa.gatk <- do.call(rbind, lapply(c("chm13v2-gatk/hg002/grch38.summary.csv", "chm13v2-gatk/hg002/chm13_to_grch38.summary.csv", "chm13v2-gatk/hg002/hg19.summary.csv", "chm13v2-gatk/hg002/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
+df.hg005.bwa.gatk <- do.call(rbind, lapply(c("chm13v2-gatk/hg005/grch38.summary.csv", "chm13v2-gatk/hg005/chm13_to_grch38.summary.csv", "chm13v2-gatk/hg005/hg19.summary.csv", "chm13v2-gatk/hg005/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
+
+
+df.hg001.bwa.gatk$Sample <- "HG001"
+df.hg002.bwa.gatk$Sample <- "HG002"
+df.hg005.bwa.gatk$Sample <- "HG005"
+df.bwa.gatk <- rbind(df.hg002.bwa.gatk, df.hg001.bwa.gatk, df.hg005.bwa.gatk) %>% filter(Filter == "PASS")
+df.bwa.gatk$Sample <- factor(df.bwa.gatk$Sample, levels=c("HG001", "HG002", "HG005"))
+df.bwa.gatk$name <- factor(df.bwa.gatk$name, levels=levelnames)
+df.bwa.gatk$name_rev <- factor(df.bwa.gatk$name, levels=rev(levelnames))
+df.bwa.gatk$GrcSystem <- ifelse(df.bwa.gatk$name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37")
+
+# df.bwa.gatk.melt <- melt(df.bwa.gatk %>% select(name, Sample, Type, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))
+df.bwa.gatk.melt <- melt(df.bwa.gatk %>% select(name, Sample, Type, METRIC.F1_Score))
+df.bwa.gatk.melt$variable <- factor(hash::values(map_metrics, keys=df.bwa.gatk.melt$variable), levels = metric_names)
+df.bwa.gatk.melt$GrcSystem <- factor(hash::values(map_grc_system, keys=df.bwa.gatk.melt$name))
+fig.bwa.gatk.f1 <- ggplot(df.bwa.gatk.melt, aes(x=variable, y=value, fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+    facet_grid(GrcSystem~Type+Sample) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.98,1)) +
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.bwa.gatk.f1
+
+df.bwa.gatk %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+
+df.bwa.gatk <- df.bwa.gatk %>% mutate(GrcSystem = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
+
+fig.bwa.gatk.scatter <- ggplot(df.bwa.gatk, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
+  geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.055, "inches"))) +
+  geom_point() + 
+  facet_grid(~GrcSystem+Sample, labeller = label_wrap_gen(multi_line=FALSE)) +
+  scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+  coord_cartesian(ylim=c(0.982,1), xlim=c(0.975,1)) +
+  ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
+  theme(axis.title.x=element_text(vjust=0, hjust=0.45),
+        axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
+        legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.bwa.gatk.scatter
+
+if (save){
+  ggsave("figures/0309/small_variants-bwa_gatk-f1.pdf", fig.bwa.gatk.f1
+         + theme(legend.position = "none")
+         , width=4, height=4)
+  ggsave("figures/0309/small_variants-bwa_gatk-scatter.pdf", fig.bwa.gatk.scatter
+         + theme(legend.position = "none")
+         , width=8, height=4)
+  # write.csv(
+  #   df.bwa.dv %>% filter(Filter=="PASS") %>% select(name, Type, Sample, TRUTH.TP, TRUTH.FN, QUERY.FP, METRIC.Recall, METRIC.Precision, METRIC.F1_Score),
+  #   "csvs/small_variants-bwa_dv.csv", row.names = FALSE)
+
+}
+```
+
+
+```{r small_variant_wgs_dv_cmrg_hg002}
+df_hg002_bwa_dv_cmrg <- do.call(rbind, lapply(c("chm13v2/hg002/cmrg/grch38.summary.csv", "chm13v2/hg002/cmrg/chm13_to_grch38.summary.csv", "chm13v2/hg002/cmrg/grch37.summary.csv", "chm13v2/hg002/cmrg/chm13_to_grch37.summary.csv"), read_csv, map=map_caller_name))
+df_hg002_bwa_dv_cmrg$name = factor(df_hg002_bwa_dv_cmrg$name, levels=levelnames)
+
+df_hg002_bwa_dv_cmrg_melt <- melt(df_hg002_bwa_dv_cmrg %>% select(name, Type, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))#metric_orig))
+df_hg002_bwa_dv_cmrg_melt$variable <- factor(hash::values(map_metrics, keys=df_hg002_bwa_dv_cmrg_melt$variable), levels = metric_names)
+df_hg002_bwa_dv_cmrg_melt$GrcSystem <- factor(hash::values(map_grc_system, keys=df_hg002_bwa_dv_cmrg_melt$name))
+fig_hg002_cmrg <- ggplot(df_hg002_bwa_dv_cmrg_melt, aes(x=variable, y=value, fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+    facet_grid(GrcSystem~Type) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.9,1)) +
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig_hg002_cmrg 
+
+df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+
+if (save){
+  ggsave("figures/0309/small_variants-bwa_dv-cmrg.pdf", fig_hg002_cmrg, width=5, height=5)
+}
+```
+
+```{r small_variant_wgs_gatk_cmrg_hg002}
+df.hg002.bwa.gatk.cmrg <- do.call(rbind, lapply(c("chm13v2-gatk/hg002/cmrg/grch38.summary.csv", "chm13v2-gatk/hg002/cmrg/chm13_to_grch38.summary.csv", "chm13v2-gatk/hg002/cmrg/hg19.summary.csv", "chm13v2-gatk/hg002/cmrg/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name)) %>% filter(Filter == "PASS")
+df.hg002.bwa.gatk.cmrg$name = factor(df.hg002.bwa.gatk.cmrg$name, levels=levelnames)
+
+df.hg002.bwa.gatk.cmrg.melt <- melt(df.hg002.bwa.gatk.cmrg %>% select(name, Type, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))#metric_orig))
+df.hg002.bwa.gatk.cmrg.melt$variable <- factor(hash::values(map_metrics, keys=df.hg002.bwa.gatk.cmrg.melt$variable), levels = metric_names)
+df.hg002.bwa.gatk.cmrg.melt$GrcSystem <- factor(hash::values(map_grc_system, keys=df.hg002.bwa.gatk.cmrg.melt$name))
+fig.hg002.bwa.gatk.cmrg <- ggplot(df.hg002.bwa.gatk.cmrg.melt, aes(x=variable, y=value, fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+    facet_grid(GrcSystem~Type) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.9,1)) +
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.hg002.bwa.gatk.cmrg 
+
+df.hg002.bwa.gatk.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+
+if (save){
+  ggsave("figures/0309/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=5, height=5)
+}
+```
+
+```{r pacbio_small_variants}
+df.hg002.hifi.dv <- do.call(rbind, lapply(c("pacbio/grch38.summary.csv", "pacbio/chm13_to_grch38.summary.csv", "pacbio/grch37.summary.csv", "pacbio/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
+df.hg002.hifi.dv$name = factor(df.hg002.hifi.dv$name, levels=levelnames)
+
+df.hg002.hifi.dv.melt <- melt(df.hg002.hifi.dv %>% select(name, Type, METRIC.Recall, METRIC.Precision, METRIC.F1_Score))#metric_orig))
+df.hg002.hifi.dv.melt$variable <- factor(hash::values(map_metrics, keys=df.hg002.hifi.dv.melt$variable), levels = metric_names)
+df.hg002.hifi.dv.melt$GrcSystem <- factor(hash::values(map_grc_system, keys=df.hg002.hifi.dv.melt$name))
+fig.hg002.hifi.dv <- ggplot(df.hg002.hifi.dv.melt, aes(x=variable, y=value, fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+    facet_grid(GrcSystem~Type) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.9,1)) +
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.hg002.hifi.dv 
+
+df.hg002.hifi.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+
+if (save){
+  ggsave("figures/small_variants-pacbio.pdf", fig.hg002.hifi.dv+theme(legend.position = "bottom"), width=5, height=5)
+}
+```

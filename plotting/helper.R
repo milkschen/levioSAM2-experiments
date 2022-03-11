@@ -47,6 +47,14 @@ grid_arrange_shared_legend <- function(show_legend, num_rows, legend_plot_id, ..
   }
 }
 
+read_csv <- function(fn, map) {
+  df <- read.delim(fn, header = TRUE, sep = ",")
+  nx <-  tail(strsplit(fn, "/")[[1]], n=1)
+  name <- strsplit(nx, "[.]")[[1]][1]
+  df$name <- hash::values(map, keys=name)
+  return(df)
+}
+
 # Copyright (c) 2010-2015 Illumina, Inc.
 # All rights reserved.
 #
@@ -257,7 +265,7 @@ read_single_with_map = function(x, map_caller_name) {
   # result$name = c(prefix)
   
   # Map names
-  result$name <- values(map_caller_name, keys=result$name)
+  result$name <- hash::values(map_caller_name, keys=result$name)
   
   result$igroup = paste(result$name,
                         result$Filter,

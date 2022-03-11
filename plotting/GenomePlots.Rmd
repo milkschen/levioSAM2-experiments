@@ -1,0 +1,52 @@
+---
+title: "GenomePlots"
+author: "Nae-Chyun"
+date: "2/21/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup}
+library(karyoploteR)
+library(regioneR)
+```
+
+__karyoploteR__ tutorials are at: 
+https://bernatgel.github.io/karyoploter_tutorial/
+
+```{r load.data}
+chm13v2.genome <- toGRanges("chm13v2/unliftable/chm13v2.0.bed")
+chm13v2.unliftable <- toGRanges("chm13v2/unliftable/chm13v2-grch38-unliftable-source-slop50k.bed")
+chm13v2.called.unliftable.q30 <- toGRanges("chm13v2/unliftable/HG002-bwa-chm13_to_grch38-unliftable-source-q30-slop50k.bed")
+# chm13v2.unliftable <- toGRanges("chm13v2/unliftable/chm13v2-grch38-unliftable-source-5k.bed")
+# chm13v2.called.unliftable.q30 <- toGRanges("chm13v2/unliftable/HG002-bwa-chm13_to_grch38-unliftable-source-q30-slop10k-merged.bed")
+```
+
+```{r genome.plot.unliftable.variants}
+# pp <- getDefaultPlotParams(plot.type=6)
+# # pp$leftmargin <- 0.05
+# pp$data2height <- 50
+# pp <- getDefaultPlotParams(plot.type=2)
+# pp$data1outmargin <- 1
+# pp$data2outmargin <- 1
+# pp$topmargin <- 450
+
+# pdf("figures/variants-chm13_unique-q30.pdf", width = 10, height = 9)
+kp <- plotKaryotype(genome = chm13v2.genome, plot.type=2)#, chromosomes = "chr20")#, plot.params=pp)
+kpPlotRegions(kp, data=chm13v2.unliftable, col="deepskyblue", layer.margin = 0.05, border=NA)
+kpPlotRegions(kp, data=chm13v2.called.unliftable.q30, col="red", layer.margin = 0.05, border=NA, data.panel=2)
+# kpPlotRegions(kp, data=chm13v2.called.unliftable.q30, col="gold", layer.margin = 0.1, border=NA, data.panel=2, r0=0, r1=0.55)
+# kpPlotRegions(kp, data=chm13v2.unliftable, col="#AACCFF", border="#FFCCAA", r0=0.3, r1=0.55)
+# dev.off()
+```
+
+```{r load.hg001.error.hotspots}
+h38.genome <- toGRanges("chm13v2/hg001_hotspots_grch38/grch38_primary.bed")
+# hg001.errors <- toGRanges("chm13v2/hg001_hotspots_grch38/chm13_to_grch38-errors.bed")
+hg001.errors <- toGRanges("chm13v2/hg001_hotspots_grch38/chm13_to_grch38-errors-slop10k-merged.bed")
+kp <- plotKaryotype(genome = h38.genome, plot.type=1)
+kpPlotRegions(kp, data=hg001.errors, col="deepskyblue", layer.margin = 0.05, border=NA)
+```
