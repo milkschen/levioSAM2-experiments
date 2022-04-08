@@ -19,11 +19,13 @@ library(RColorBrewer)
 library(hash)
 library(ggridges)
 library(scales)
+library(xtable)
 library(ggrepel)
 source("helper.R")
 ```
 
 ```{r global}
+options(pillar.sigfig=4)
 save <- FALSE
 
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
@@ -91,7 +93,10 @@ fig.bwa.dv.f1 <- ggplot(df.bwa.dv.melt, aes(x=variable, y=value, fill=name)) +
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.bwa.dv.f1
 
+print(xtable(df.bwa.dv %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% arrange(Sample) %>% select(Sample, name, Type, metric_orig), digits=4), include.rownames=FALSE)
 df.bwa.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+df.bwa.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err = sum(Err))
+df.bwa.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err = sum(Err)/3) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
 
 df.bwa.dv <- df.bwa.dv %>% mutate(GrcSystem = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
 
@@ -149,7 +154,11 @@ fig.bwa.gatk.f1 <- ggplot(df.bwa.gatk.melt, aes(x=variable, y=value, fill=name))
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.bwa.gatk.f1
 
+print(xtable(df.bwa.gatk %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% arrange(Sample) %>% select(Sample, name, Type, metric_orig), digits=4), include.rownames=FALSE)
 df.bwa.gatk %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+df.bwa.gatk %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
+df.bwa.gatk %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(TRUTH.TP=sum(TRUTH.TP), TRUTH.FN=sum(TRUTH.FN), QUERY.FP=sum(QUERY.FP), Precision = TRUTH.TP / (TRUTH.TP + QUERY.FP), Recall = TRUTH.TP / (TRUTH.TP + TRUTH.FN), F1 = 2 * Precision * Recall / (Precision + Recall)) %>% select(name, Precision, Recall, F1)
+df.bwa.gatk %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name, Type) %>% summarise(TRUTH.TP=sum(TRUTH.TP), TRUTH.FN=sum(TRUTH.FN), QUERY.FP=sum(QUERY.FP), Precision = TRUTH.TP / (TRUTH.TP + QUERY.FP), Recall = TRUTH.TP / (TRUTH.TP + TRUTH.FN), F1 = 2 * Precision * Recall / (Precision + Recall)) %>% select(name, Type, Precision, Recall, F1)
 
 df.bwa.gatk <- df.bwa.gatk %>% mutate(GrcSystem = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
 
@@ -196,7 +205,9 @@ fig_hg002_bwa_dv_cmrg <- ggplot(df_hg002_bwa_dv_cmrg_melt, aes(x=variable, y=val
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig_hg002_bwa_dv_cmrg 
 
-df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+print(xtable(df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% select(name, Type, metric_orig), digits=4), include.rownames=FALSE)
+df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
 
 if (save){
   ggsave("figures/0309/small_variants-bwa_dv-cmrg.pdf", fig_hg002_bwa_dv_cmrg, width=5, height=5)
@@ -219,7 +230,9 @@ fig.hg002.bwa.gatk.cmrg <- ggplot(df.hg002.bwa.gatk.cmrg.melt, aes(x=variable, y
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.bwa.gatk.cmrg 
 
+print(xtable(df.hg002.bwa.gatk.cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% select(name, Type, metric_orig), digits=4), include.rownames=FALSE)
 df.hg002.bwa.gatk.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+df.hg002.bwa.gatk.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
 
 if (save){
   ggsave("figures/0309/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=5, height=5)
@@ -231,17 +244,23 @@ if (save){
 ```{r stratification_settings}
 strat_subsets <- c('*', 'alldifficultregions', 'alllowmapandsegdupregions', 'lowmappabilityall', 'segdups', 'allOtherDifficultregions', 
                    'AllHomopolymers_gt6bp_imperfectgt10bp_slop5', 'AllTandemRepeats_201to10000bp_slop5', 'AllTandemRepeats_51to200bp_slop5', 'AllTandemRepeats_gt10000bp_slop5', 'AllTandemRepeats_gt100bp_slop5', 'AllTandemRepeats_lt51bp_slop5', 'AllTandemRepeatsandHomopolymers_slop5', 'BadPromoters', 'CMRGv1.00_duplicationinKMT2C', 'CMRGv1.00_falselyduplicatedgenes', 'KIR', 'L1H_gt500', 'LD_discordant_haplotypes_slop5bp', 'MHC', 'SimpleRepeat_diTR_11to50_slop5', 'SimpleRepeat_diTR_51to200_slop5', 'SimpleRepeat_diTR_gt200_slop5', 'SimpleRepeat_homopolymer_4to6_slop5', 'SimpleRepeat_homopolymer_7to11_slop5', 'SimpleRepeat_homopolymer_gt11_slop5', 'SimpleRepeat_homopolymer_gt20_slop5', 'SimpleRepeat_imperfecthomopolgt10_slop5', 'SimpleRepeat_imperfecthomopolgt20_slop5', 'SimpleRepeat_quadTR_20to50_slop5', 'SimpleRepeat_quadTR_51to200_slop5', 'SimpleRepeat_quadTR_gt200_slop5', 'SimpleRepeat_triTR_15to50_slop5', 'SimpleRepeat_triTR_51to200_slop5', 'SimpleRepeat_triTR_gt200_slop5', 'VDJ', 'ancestry_AFR', 'ancestry_AMR', 'ancestry_EAS', 'ancestry_EUR', 'ancestry_Neanderthal', 'ancestry_SAS', 'chainSelf', 'chainSelf_gt10kb', 'collapsed_duplication_FP_regions', 'contigs_lt500kb', 'false_duplications_correct_copy', 'false_duplications_incorrect_copy', 'gaps_slop15kb', 'gc15_slop50', 'gc15to20_slop50', 'gc20to25_slop50', 'gc25to30_slop50', 'gc30to55_slop50', 'gc55to60_slop50', 'gc60to65_slop50', 'gc65to70_slop50', 'gc70to75_slop50', 'gc75to80_slop50', 'gc80to85_slop50', 'gc85_slop50', 'gclt25orgt65_slop50', 'gclt30orgt55_slop50', 'gnomAD_InbreedingCoeff_slop1bp_merge1000bp', 'gt5segdups_gt10kb_gt99percidentity', 'hg38_minimap2_asm20_N10_gt1contig_gt1kb', 'hg38_minimap2_asm20_N10_nocovgt1kb', 'hs37d5_decoy_alignments',  'missing_and_multiple_alignments_of_GRCh38', 'nonunique_l100_m2_e1', 'nonunique_l250_m0_e0', 'notinAllHomopolymers_gt6bp_imperfectgt10bp_slop5', 'notinAllTandemRepeatsandHomopolymers_slop5', 'notinalldifficultregions', 'notinalllowmapandsegdupregions', 'notinchainSelf', 'notinchainSelf_gt10kb', 'notinlowmappabilityall', 'notinrefseq_cds', 'notinsegdups', 'notinsegdups_gt10kb', 'population_CNV_FP_regions', 'refseq_cds', 'segdups_gt10kb')
-strat_names <- c('All', 'AllDifficult', 'LowMap&SegDup', 'LowMap', 'SegDups', 'AllOtherDifficult', 
-                 'Homo>6bp_imperfectgt10bp', 'Tandem201-10000bp', 'Tandem51-200bp', 'Tandem>10000bp', 'Tandem>100bp', 'Tandem<51bp', 'Tandem&Homo', 'BadPromoters', 'CMRGv1.00_duplicationinKMT2C', 'CMRGv1.00_falselyduplicatedgenes', 'KIR', 'L1H>500', 'LD_discordant_haplotypes', 'MHC', 'DiTR_11-50', 'DiTR_51-200', 'DiTR>200', 'Homo4-6bp', 'Homo7-11bp', 'Homo>11bp', 'Homo>20bp', 'ImperfectHomo>10bp', 'ImperfectHomo>20bp', 'QuadTR_20-50', 'QuadTR_51-200', 'QuadTR>200', 'TriTR_15-50', 'TriTR_51-200', 'TriTR>200', 'VDJ', 'AFR', 'AMR', 'EAS', 'EUR', 'Neanderthal', 'SAS', 'ChainSelf', 'ChainSelf>10kb', 'collapsed_duplication_FP', 'contigs<500kb', 'false_duplications_correct_copy', 'false_duplications_incorrect_copy', 'gaps_slop15kb', 'GC15', 'GC15-20', 'GC20-25', 'GC25-30', 'GC30-55', 'GC55-60', 'GC60-65', 'GC65-70', 'GC70-75', 'GC75-80', 'GC80-85', 'GC85', 'GC<25or>65', 'GC<30or>55', 'gnomAD_InbreedingCoeff_slop1bp_merge1000bp', '>5SegDups>10kb>99percidentity', 'hg38_minimap2_asm20_N10>1contig>1kb', 'hg38_minimap2_asm20_N10_nocov>1kb', 'hs37d5Decoy', 'missing_and_multiple_alignments_of_GRCh38', 'NonUnique100bp', 'NonUnique250bp', 'NotInHomo>6bp_imperfect>10bp', 'NotInTandem&Homo', 'NotInAllDifficult', 'NotInLowMap&SegDup', 'NotInChainSelf', 'NotInChainSelf>10kb', 'NotInLowMap', 'NotInRefSeqCds', 'NotInSegDups', 'NotInSegDups>10kb', 'population_CNV_FP_regions', 'RefSeqCds', 'SegDups>10kb')
+strat_names <- c('All', 'AllDifficult', 'LowMap&SegDup', 'LowMap', 'SegDups', 'OtherDifficult', 
+                 'Homo>6bp_imperfectgt10bp', 'Tandem201-10000bp', 'Tandem51-200bp', 'Tandem>10000bp', 'Tandem>100bp', 'Tandem<51bp', 'Tandem&Homo', 'BadPromoters', 'CMRGv1.00_duplicationinKMT2C', 'CMRGv1.00_falselyduplicatedgenes', 'KIR', 'L1H>500', 'LdDiscordantHaps', 'MHC', 'DiTR_11-50', 'DiTR_51-200', 'DiTR>200', 'Homo4-6bp', 'Homo7-11bp', 'Homo>11bp', 'Homo>20bp', 'ImperfectHomo>10bp', 'ImperfectHomo>20bp', 'QuadTR_20-50', 'QuadTR_51-200', 'QuadTR>200', 'TriTR_15-50', 'TriTR_51-200', 'TriTR>200', 'VDJ', 'AFR', 'AMR', 'EAS', 'EUR', 'Neanderthal', 'SAS', 'ChainSelf', 'ChainSelf>10kb', 'collapsed_duplication_FP', 'contigs<500kb', 'false_duplications_correct_copy', 'false_duplications_incorrect_copy', 'gaps_slop15kb', 'GC15', 'GC15-20', 'GC20-25', 'GC25-30', 'GC30-55', 'GC55-60', 'GC60-65', 'GC65-70', 'GC70-75', 'GC75-80', 'GC80-85', 'GC85', 'GC<25or>65', 'GC<30or>55', 'gnomAD_InbreedingCoeff_slop1bp_merge1000bp', '>5SegDups>10kb>99percidentity', 'hg38_minimap2_asm20_N10>1contig>1kb', 'hg38_minimap2_asm20_N10_nocov>1kb', 'hs37d5Decoy', 'missing_and_multiple_alignments_of_GRCh38', 'NonUnique100bp', 'NonUnique250bp', 'NotInHomo>6bp_imperfect>10bp', 'NotInTandem&Homo', 'NotInAllDifficult', 'NotInLowMap&SegDup', 'NotInChainSelf', 'NotInChainSelf>10kb', 'NotInLowMap', 'NotInRefSeqCds', 'NotInSegDups', 'NotInSegDups>10kb', 'population_CNV_FP_regions', 'RefSeqCds', 'SegDups>10kb')
 map_strat_subsets <- hash()
 for (i in seq(1, length(strat_subsets))){
   map_strat_subsets[[strat_subsets[i]]] <- strat_names[i]}
 
+# From https://github.com/genome-in-a-bottle/genome-stratifications
+# Difficult: union of all tandem repeats, all homopolymers >6bp, all imperfect homopolymers >10bp, all difficult to map regions, all segmental duplications, GC <25% or >65%, "Bad Promoters", and "OtherDifficult" regions
+strat_diff_subsets <- c('*', 'alldifficultregions', 'alllowmapandsegdupregions', 'lowmappabilityall', 'segdups', 'allOtherDifficultregions', 
+                   'AllHomopolymers_gt6bp_imperfectgt10bp_slop5', 'AllTandemRepeats_201to10000bp_slop5', 'AllTandemRepeats_51to200bp_slop5', 'AllTandemRepeats_gt10000bp_slop5', 'AllTandemRepeats_gt100bp_slop5', 'AllTandemRepeats_lt51bp_slop5', 'AllTandemRepeatsandHomopolymers_slop5', 'BadPromoters', 'CMRGv1.00_duplicationinKMT2C', 'CMRGv1.00_falselyduplicatedgenes', 'KIR', 'L1H_gt500', 'LD_discordant_haplotypes_slop5bp', 'MHC', 'SimpleRepeat_diTR_11to50_slop5', 'SimpleRepeat_diTR_51to200_slop5', 'SimpleRepeat_diTR_gt200_slop5', 'SimpleRepeat_homopolymer_4to6_slop5', 'SimpleRepeat_homopolymer_7to11_slop5', 'SimpleRepeat_homopolymer_gt11_slop5', 'SimpleRepeat_homopolymer_gt20_slop5', 'SimpleRepeat_imperfecthomopolgt10_slop5', 'SimpleRepeat_imperfecthomopolgt20_slop5', 'SimpleRepeat_quadTR_20to50_slop5', 'SimpleRepeat_quadTR_51to200_slop5', 'SimpleRepeat_quadTR_gt200_slop5', 'SimpleRepeat_triTR_15to50_slop5', 'SimpleRepeat_triTR_51to200_slop5', 'SimpleRepeat_triTR_gt200_slop5', 'VDJ', 'chainSelf', 'chainSelf_gt10kb', 'collapsed_duplication_FP_regions', 'contigs_lt500kb', 'false_duplications_correct_copy', 'false_duplications_incorrect_copy', 'gaps_slop15kb', 'gc15_slop50', 'gc15to20_slop50', 'gc20to25_slop50', 'gc65to70_slop50', 'gc70to75_slop50', 'gc75to80_slop50', 'gc80to85_slop50', 'gc85_slop50', 'gclt25orgt65_slop50', 'gclt30orgt55_slop50', 'gnomAD_InbreedingCoeff_slop1bp_merge1000bp', 'gt5segdups_gt10kb_gt99percidentity', 'hg38_minimap2_asm20_N10_gt1contig_gt1kb', 'hg38_minimap2_asm20_N10_nocovgt1kb', 'hs37d5_decoy_alignments',  'missing_and_multiple_alignments_of_GRCh38', 'nonunique_l100_m2_e1', 'nonunique_l250_m0_e0', 'population_CNV_FP_regions', 'refseq_cds', 'segdups_gt10kb')
+
 stratify_subsets <- 
 # Mixed
 # c("*", "alldifficultregions", "alllowmapandsegdupregions", "lowmappabilityall", "segdups")
-  c("alldifficultregions", "lowmappabilityall", "segdups")
+  # c("alldifficultregions", "lowmappabilityall", "segdups")
   # c("alldifficultregions", "lowmappabilityall", "segdups", "allOtherDifficultregions")
+  c("alldifficultregions", "lowmappabilityall", "segdups", "allOtherDifficultregions", "AllTandemRepeatsandHomopolymers_slop5", "gclt25orgt65_slop50")
   # c("*", "alldifficultregions", "lowmappabilityall", "segdups", "allOtherDifficultregions")
   # c("*", "allOtherDifficultregions", "alldifficultregions", "alllowmapandsegdupregions", "segdups")
 # FunctionalRegions
@@ -268,26 +287,25 @@ color_codes <- c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")
 ```
 
 ```{r small_variant_calling_stratified_hg002_compare}
-df_hg002_bwa_dv_stratify_grc <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/grch38.extended.csv", "chm13v2/hg002/stratify/grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets)
-df_hg002_bwa_dv_stratify_leviosam <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/chm13_to_grch38.extended.csv", "chm13v2/hg002/stratify/chm13_to_grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets)
+df.hg002.bwa.dv.stratify_grc <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/grch38.extended.csv", "chm13v2/hg002/stratify/grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Subset %in% strat_diff_subsets)
+df.hg002.bwa.dv.stratify_leviosam <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/chm13_to_grch38.extended.csv", "chm13v2/hg002/stratify/chm13_to_grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Subset %in% strat_diff_subsets)
 
-# df_hg002_bwa_dv_stratify_grc <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/grch38.extended.csv", "chm13v2/hg002/stratify/grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Type == "INDEL")
-# df_hg002_bwa_dv_stratify_leviosam <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/chm13_to_grch38.extended.csv", "chm13v2/hg002/stratify/chm13_to_grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Type == "INDEL")
+# df.hg002.bwa.dv.stratify_grc <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/grch38.extended.csv", "chm13v2/hg002/stratify/grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Type == "INDEL")
+# df.hg002.bwa.dv.stratify_leviosam <- do.call(rbind, lapply(c("chm13v2/hg002/stratify/chm13_to_grch38.extended.csv", "chm13v2/hg002/stratify/chm13_to_grch37.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Type == "INDEL")
 
-df_hg002_bwa_dv_stratify_grc$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df_hg002_bwa_dv_stratify_grc$Subset), levels = strat_names)
-df_hg002_bwa_dv_stratify_leviosam$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df_hg002_bwa_dv_stratify_leviosam$Subset), levels = strat_names)
-# df_hg002_bwa_dv_stratify_leviosam <- df_hg002_bwa_dv_stratify_leviosam %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 5e6)
-df_hg002_bwa_dv_stratify_grc$ErrDiff <- df_hg002_bwa_dv_stratify_grc$TRUTH.FN + df_hg002_bwa_dv_stratify_grc$QUERY.FP - df_hg002_bwa_dv_stratify_leviosam$TRUTH.FN - df_hg002_bwa_dv_stratify_leviosam$QUERY.FP
-df_hg002_bwa_dv_stratify_leviosam$ErrDiff <- df_hg002_bwa_dv_stratify_grc$TRUTH.FN + df_hg002_bwa_dv_stratify_grc$QUERY.FP - df_hg002_bwa_dv_stratify_leviosam$TRUTH.FN - df_hg002_bwa_dv_stratify_leviosam$QUERY.FP
-df_hg002_bwa_dv_stratify_grc <- df_hg002_bwa_dv_stratify_grc %>% mutate(ConfSubsetSize_Mbp = Subset.IS_CONF.Size / 1000000)
-df_hg002_bwa_dv_stratify_grc <- df_hg002_bwa_dv_stratify_grc %>% mutate(ErrDiff, ErrDiffDensity = ErrDiff / ConfSubsetSize_Mbp)
-df_hg002_bwa_dv_stratify_leviosam <- df_hg002_bwa_dv_stratify_leviosam %>% mutate(ConfSubsetSize_Mbp = Subset.IS_CONF.Size / 1000000)
-df_hg002_bwa_dv_stratify_leviosam <- df_hg002_bwa_dv_stratify_leviosam %>% mutate(ErrDiff, ErrDiffDensity = ErrDiff / ConfSubsetSize_Mbp)
+df.hg002.bwa.dv.stratify_grc$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df.hg002.bwa.dv.stratify_grc$Subset), levels = strat_names)
+df.hg002.bwa.dv.stratify_leviosam$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df.hg002.bwa.dv.stratify_leviosam$Subset), levels = strat_names)
+# df.hg002.bwa.dv.stratify_leviosam <- df.hg002.bwa.dv.stratify_leviosam %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 5e6)
+df.hg002.bwa.dv.stratify_grc$ErrDiff <- df.hg002.bwa.dv.stratify_grc$TRUTH.FN + df.hg002.bwa.dv.stratify_grc$QUERY.FP - df.hg002.bwa.dv.stratify_leviosam$TRUTH.FN - df.hg002.bwa.dv.stratify_leviosam$QUERY.FP
+df.hg002.bwa.dv.stratify_leviosam$ErrDiff <- df.hg002.bwa.dv.stratify_grc$TRUTH.FN + df.hg002.bwa.dv.stratify_grc$QUERY.FP - df.hg002.bwa.dv.stratify_leviosam$TRUTH.FN - df.hg002.bwa.dv.stratify_leviosam$QUERY.FP
+df.hg002.bwa.dv.stratify_grc <- df.hg002.bwa.dv.stratify_grc %>% mutate(ConfSubsetSize_Mbp = Subset.IS_CONF.Size / 1000000)
+df.hg002.bwa.dv.stratify_grc <- df.hg002.bwa.dv.stratify_grc %>% mutate(ErrDiff, ErrDiffDensity = ErrDiff / ConfSubsetSize_Mbp)
+df.hg002.bwa.dv.stratify_leviosam <- df.hg002.bwa.dv.stratify_leviosam %>% mutate(ConfSubsetSize_Mbp = Subset.IS_CONF.Size / 1000000)
+df.hg002.bwa.dv.stratify_leviosam <- df.hg002.bwa.dv.stratify_leviosam %>% mutate(ErrDiff, ErrDiffDensity = ErrDiff / ConfSubsetSize_Mbp)
 
-df_hg002_bwa_dv_stratify <- rbind(df_hg002_bwa_dv_stratify_grc, df_hg002_bwa_dv_stratify_leviosam)
+df.hg002.bwa.dv.stratify <- rbind(df.hg002.bwa.dv.stratify_grc, df.hg002.bwa.dv.stratify_leviosam)
 
-
-dat.hg002.small.var.stratify.grc.topdiff.melt.h37 <- melt(rbind(df_hg002_bwa_dv_stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity > 1) %>% top_n(topdiff_n), df_hg002_bwa_dv_stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, name))
+dat.hg002.small.var.stratify.grc.topdiff.melt.h37 <- melt(rbind(df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity > 1) %>% top_n(topdiff_n), df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, name))
 dat.hg002.small.var.stratify.grc.topdiff.melt.h37$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt.h37 %>% filter(variable == "ErrDiffDensity"))$value, 2)
 dat.hg002.small.var.stratify.grc.topdiff.melt.h37$variable <- factor(
   dat.hg002.small.var.stratify.grc.topdiff.melt.h37$variable,
@@ -296,12 +314,12 @@ dat.hg002.small.var.stratify.grc.topdiff.melt.h37$variable <- factor(
 fig_hg002_stratify_topdiff_h37 <- ggplot(dat.hg002.small.var.stratify.grc.topdiff.melt.h37, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
     geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[3]) +
     facet_grid(~variable, scales = "free") +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig_hg002_stratify_topdiff_h37
 
 dat.hg002.small.var.stratify.grc.topdiff.melt.h38 <- melt(
-  rbind(df_hg002_bwa_dv_stratify_grc %>% filter(name == "GRCh38", ErrDiffDensity > 1) %>% top_n(topdiff_n), 
-        df_hg002_bwa_dv_stratify_grc %>% filter(name == "GRCh38", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, name))
+  rbind(df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh38", ErrDiffDensity > 1) %>% top_n(topdiff_n), 
+        df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh38", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, name))
 dat.hg002.small.var.stratify.grc.topdiff.melt.h38$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt.h38 %>% filter(variable == "ErrDiffDensity"))$value, 2)
 dat.hg002.small.var.stratify.grc.topdiff.melt.h38$variable <- factor(
   dat.hg002.small.var.stratify.grc.topdiff.melt.h38$variable,
@@ -310,59 +328,75 @@ dat.hg002.small.var.stratify.grc.topdiff.melt.h38$variable <- factor(
 fig_hg002_stratify_topdiff_h38 <- ggplot(dat.hg002.small.var.stratify.grc.topdiff.melt.h38, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
     geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[1]) +
     facet_grid(~variable, scales = "free") +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig_hg002_stratify_topdiff_h38
 
+dat.hg002.small.var.stratify.grc.topdiff.melt <- rbind(dat.hg002.small.var.stratify.grc.topdiff.melt.h37, dat.hg002.small.var.stratify.grc.topdiff.melt.h38)
+# dat.hg002.small.var.stratify.grc.topdiff.melt$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt %>% filter(variable == "#Error Diff Per Mbp"))$value, 2)
+fig_hg002_stratify_topdiff <- ggplot(dat.hg002.small.var.stratify.grc.topdiff.melt, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = c(color_codes[1], color_codes[3])) +
+    facet_grid(name~variable, scales = "free") +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig_hg002_stratify_topdiff
+
 if (save){
-  ggsave("figures/0309/small_variants-bwa_dv-stratify-topdiff-h37.pdf", fig_hg002_stratify_topdiff_h37, width=6, height=2.5)
-  ggsave("figures/0309/small_variants-bwa_dv-stratify-topdiff-h38.pdf", fig_hg002_stratify_topdiff_h38, width=6, height=2.5)
+  ggsave("figures/0309/supp/small_variants-bwa_dv-stratify-topdiff.pdf", fig_hg002_stratify_topdiff, width=6, height=6)
+  ggsave("figures/0309/supp/small_variants-bwa_dv-stratify-topdiff-h37.pdf", fig_hg002_stratify_topdiff_h37, width=6, height=5)
+  ggsave("figures/0309/supp/small_variants-bwa_dv-stratify-topdiff-h38.pdf", fig_hg002_stratify_topdiff_h38, width=6, height=5)
 }
 ```
 
 ```{r small_variant_calling_stratified_hg002}
-# df_hg002_bwa_dv_stratify <- do.call(rbind, lapply(c("v0.5.1/hg002/stratify/grch38.extended.csv", "v0.5.1/hg002/stratify/grch37.extended.csv", "v0.5.1/hg002/stratify/chm13_to_grch38.extended.csv", "v0.5.1/hg002/stratify/chm13_to_grch37.extended.csv"), read_csv, map=map_caller_name))
+df.hg002.bwa.dv.stratify <- df.hg002.bwa.dv.stratify %>% filter(Filter == "PASS", Subtype == "*", Subset %in% stratify_subsets)
+df.hg002.bwa.dv.stratify$name = factor(df.hg002.bwa.dv.stratify$name, levels=levelnames)
+df.hg002.bwa.dv.stratify$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df.hg002.bwa.dv.stratify$Subset), levels = strat_names)
 
-df_hg002_bwa_dv_stratify <- df_hg002_bwa_dv_stratify %>% filter(Filter == "PASS", Subtype == "*", Subset %in% stratify_subsets)
-df_hg002_bwa_dv_stratify$name = factor(df_hg002_bwa_dv_stratify$name, levels=levelnames)
-df_hg002_bwa_dv_stratify$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df_hg002_bwa_dv_stratify$Subset), levels = strat_names)
+df.hg002.bwa.dv.stratify <- df.hg002.bwa.dv.stratify %>% mutate(h38 = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
 
-df_hg002_bwa_dv_stratify <- df_hg002_bwa_dv_stratify %>% mutate(h38 = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
+print(xtable(df.hg002.bwa.dv.stratify %>% filter(Filter == "PASS") %>% arrange(desc(h38)) %>% arrange(desc(Subset.Rename)) %>% arrange(desc(Type)) %>% select(name, Type, Subset.Rename, metric_orig), digits=4), include.rownames=FALSE)
+# INDEL/SNP
+df.hg002.bwa.dv.stratify %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN+QUERY.FP) %>% select(name, Type, Err, Subset.Rename) %>% spread(name, Err) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37)
+# INDEL+SNP
+df.hg002.bwa.dv.stratify %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN+QUERY.FP) %>% select(name, Type, Err, Subset.Rename) %>% group_by(name, Subset.Rename) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37)
+# # FN
+# df.hg002.bwa.dv.stratify_fn <- df.hg002.bwa.dv.stratify %>% filter(Filter == "PASS", Subset.Rename == "AllDifficult") %>% select(name, Type, TRUTH.FN) %>% spread(name, TRUTH.FN) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37, Err.Type = "FN")
+# # FP
+# df.hg002.bwa.dv.stratify_fp <- df.hg002.bwa.dv.stratify %>% filter(Filter == "PASS", Subset.Rename == "AllDifficult") %>% select(name, Type, QUERY.FP) %>% spread(name, QUERY.FP) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37, Err.Type = "FP")
+# rbind(df.hg002.bwa.dv.stratify_fn, df.hg002.bwa.dv.stratify_fp)
 
-# fig_hg002_bwa_dv_stratify_scatter <- ggplot(df_hg002_bwa_dv_stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
-#   geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.075, "inches"))) +
-#   geom_point() +
-#   facet_wrap(h38~Subset.Rename, ncol = 4, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
-#   scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
-#   ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
-#   theme(axis.title.x=element_text(vjust=0, hjust=0.45),
-#         axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
-#         legend.position = "bottom")
-# fig_hg002_bwa_dv_stratify_scatter
+df.hg002.bwa.dv.stratify.no.tandem.gc <- df.hg002.bwa.dv.stratify %>% filter(!Subset.Rename %in% c("Tandem&Homo", "GC<25or>65"))
 
-fig_hg002_bwa_dv_stratify_scatter_fixed <- ggplot(df_hg002_bwa_dv_stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
+# fig.hg002.bwa.dv.stratify.scatter <- ggplot(df.hg002.bwa.dv.stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
+fig.hg002.bwa.dv.stratify.scatter <- ggplot(df.hg002.bwa.dv.stratify.no.tandem.gc, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
   geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.075, "inches"))) +
   geom_point() + 
-  facet_grid(~h38+Subset.Rename, labeller = label_wrap_gen(multi_line=FALSE)) +
-  coord_cartesian(ylim=c(.84,1), xlim=c(0.84, 1)) +
+  facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T)) +
+  # coord_cartesian(ylim=c(.85,1), xlim=c(0.85, 1)) +
+  coord_cartesian(ylim=c(.6,1), xlim=c(0.6, 1)) +
+  # facet_grid(~h38+Subset.Rename, labeller = label_wrap_gen(multi_line=FALSE)) +
+  # coord_cartesian(ylim=c(.84,1), xlim=c(0.84, 1)) +
   # facet_wrap(h38~Subset.Rename, ncol = 6, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
   # facet_grid(h38~Subset.Rename, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
   scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
   ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
   theme(axis.title.x=element_text(vjust=0, hjust=0.45),
         axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
-        legend.position = "right", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
-fig_hg002_bwa_dv_stratify_scatter_fixed
+        legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.hg002.bwa.dv.stratify.scatter
 
 if (save){
-  ggsave("figures/0309/small_variants-bwa_dv-stratify-mixed-scatter-facet-fixed.pdf", 
-         fig_hg002_bwa_dv_stratify_scatter_fixed + theme(legend.position = "none"), width=8, height=4)
+  ggsave("figures/0309/supp/small_variants-bwa_dv-stratify-mixed-scatter-facet-fixed.pdf", 
+         fig.hg002.bwa.dv.stratify.scatter
+         , width=8, height=5)
+         # + theme(legend.position = "none")
+         # , width=8, height=10)
 }
 
 ```
 
 ```{r small_variant_wgs_gatk_top_strata_hg002}
-df.hg002.bwa.gatk.stratify.grc <- do.call(rbind, lapply(c("chm13v2-gatk/hg002/stratify/grch38.extended.csv", "chm13v2-gatk/hg002/stratify/hg19.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets)
-df.hg002.bwa.gatk.stratify.leviosam <- do.call(rbind, lapply(c("chm13v2-gatk/hg002/stratify/chm13_to_grch38.extended.csv", "chm13v2-gatk/hg002/stratify/chm13_to_hg19.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets)
+df.hg002.bwa.gatk.stratify.grc <- do.call(rbind, lapply(c("chm13v2-gatk/hg002/stratify/grch38.extended.csv", "chm13v2-gatk/hg002/stratify/hg19.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Subset %in% strat_diff_subsets)
+df.hg002.bwa.gatk.stratify.leviosam <- do.call(rbind, lapply(c("chm13v2-gatk/hg002/stratify/chm13_to_grch38.extended.csv", "chm13v2-gatk/hg002/stratify/chm13_to_hg19.extended.csv"), read_csv, map=map_caller_name)) %>% filter(Subtype == "*", Filter == "PASS", Subset.IS_CONF.Size > 10e6, Subset %in% strat_subsets, Subset %in% strat_diff_subsets)
 
 df.hg002.bwa.gatk.stratify.grc$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df.hg002.bwa.gatk.stratify.grc$Subset), levels = strat_names)
 df.hg002.bwa.gatk.stratify.leviosam$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df.hg002.bwa.gatk.stratify.leviosam$Subset), levels = strat_names)
@@ -386,7 +420,7 @@ dat.hg002.bwa.gatk.stratify.grc.topdiff.h37$variable <- factor(
 fig.hg002.bwa.gatk.stratify.grc.topdiff.h37 <- ggplot(dat.hg002.bwa.gatk.stratify.grc.topdiff.h37, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
     geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[3]) +
     facet_grid(~variable, scales = "free") +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.bwa.gatk.stratify.grc.topdiff.h37
 
 dat.hg002.bwa.gatk.stratify.grc.topdiff.h38 <- melt(
@@ -400,43 +434,77 @@ dat.hg002.bwa.gatk.stratify.grc.topdiff.h38$variable <- factor(
 fig.hg002.bwa.gatk.stratify.grc.topdiff.h38 <- ggplot(dat.hg002.bwa.gatk.stratify.grc.topdiff.h38, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
     geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[1]) +
     facet_grid(~variable, scales = "free") +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.bwa.gatk.stratify.grc.topdiff.h38
 
+ 
+fig.hg002.bwa.gatk.stratify.grc.topdiff <- ggplot(rbind(dat.hg002.bwa.gatk.stratify.grc.topdiff.h37, dat.hg002.bwa.gatk.stratify.grc.topdiff.h38), aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = c(color_codes[1], color_codes[3])) +
+    facet_grid(name~variable, scales = "free") +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.hg002.bwa.gatk.stratify.grc.topdiff
+
 if (save){
-  ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h37.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h37, width=6, height=2.5)
-  ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h38.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h38, width=6, height=2.5)
+  ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff, width=6, height=6)
+  ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h37.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h37, width=6, height=5)
+  ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h38.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h38, width=6, height=5)
 }
 ```
 
 ```{r small_variant_wgs_gatk_strata_hg002}
-# df.hg002.bwa.gatk.stratify <- do.call(rbind, lapply(c("v0.5.1/hg002/stratify/grch38.extended.csv", "v0.5.1/hg002/stratify/grch37.extended.csv", "v0.5.1/hg002/stratify/chm13_to_grch38.extended.csv", "v0.5.1/hg002/stratify/chm13_to_grch37.extended.csv"), read_csv, map=map_caller_name))
-
 df.hg002.bwa.gatk.stratify <- df.hg002.bwa.gatk.stratify %>% filter(Filter == "PASS", Subtype == "*", Subset %in% stratify_subsets)
 df.hg002.bwa.gatk.stratify$name = factor(df.hg002.bwa.gatk.stratify$name, levels=levelnames)
 df.hg002.bwa.gatk.stratify$Subset.Rename <- factor(hash::values(map_strat_subsets, keys=df.hg002.bwa.gatk.stratify$Subset), levels = strat_names)
 
 df.hg002.bwa.gatk.stratify <- df.hg002.bwa.gatk.stratify %>% mutate(h38 = ifelse(name %in% c("GRCh38", "CHM13-to-GRCh38"), "GRCh38", "GRCh37"), pair = (name %in% c("GRCh38", "CHM13-to-GRCh38") * 1) + (Type == "SNP") * 10)
 
+print(xtable(df.hg002.bwa.gatk.stratify %>% filter(Filter == "PASS") %>% arrange(desc(h38)) %>% arrange(desc(Subset.Rename)) %>% arrange(desc(Type)) %>% select(name, Type, Subset.Rename, metric_orig), digits=4), include.rownames=FALSE)
+# SNP/INDEL
+df.hg002.bwa.gatk.stratify %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN+QUERY.FP) %>% select(name, Type, Err, Subset.Rename) %>% spread(name, Err) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37)
+# SNP+INDEL
+df.hg002.bwa.gatk.stratify %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN+QUERY.FP) %>% select(name, Type, Err, Subset.Rename) %>% group_by(name, Subset.Rename) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37)
+# FN in AllDifficult
+df.hg002.bwa.gatk.stratify.fn <- df.hg002.bwa.gatk.stratify %>% filter(Filter == "PASS", Subset.Rename == "AllDifficult") %>% select(name, Type, TRUTH.FN) %>% spread(name, TRUTH.FN) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37, Err.Type = "FN")
+# FP in AllDifficult
+df.hg002.bwa.gatk.stratify.fp <- df.hg002.bwa.gatk.stratify %>% filter(Filter == "PASS", Subset.Rename == "AllDifficult") %>% select(name, Type, QUERY.FP) %>% spread(name, QUERY.FP) %>% mutate(h38.diff = GRCh38-`CHM13-to-GRCh38`, h37.diff = GRCh37-`CHM13-to-GRCh37`, h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37, Err.Type = "FP")
+# FN & FP for SNP/INDEL
+rbind(df.hg002.bwa.gatk.stratify.fn, df.hg002.bwa.gatk.stratify.fp)
+# FN & FP for SNP+INDEL
+rbind(df.hg002.bwa.gatk.stratify.fn, df.hg002.bwa.gatk.stratify.fp) %>% group_by(Err.Type) %>% summarise_at(c("GRCh38", "CHM13-to-GRCh38", "GRCh37", "CHM13-to-GRCh37", "h38.diff", "h37.diff"), sum) %>% mutate(h38.reduction = h38.diff/GRCh38, h37.reduction = h37.diff/GRCh37)
 
-fig.hg002.bwa.gatk.stratify <- ggplot(df.hg002.bwa.gatk.stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
+df.hg002.bwa.gatk.stratify.no.tandem.gc <- df.hg002.bwa.gatk.stratify %>% filter(!Subset.Rename %in% c("Tandem&Homo", "GC<25or>65"))
+
+fig.hg002.bwa.gatk.stratify <- ggplot(
+  # df.hg002.bwa.gatk.stratify, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
+  df.hg002.bwa.gatk.stratify.no.tandem.gc, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
+  # df.hg002.bwa.gatk.stratify %>% filter(Subset.Rename != "OtherDifficult"), aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
   geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.075, "inches"))) +
   geom_point() + 
-  facet_grid(~h38+Subset.Rename, labeller = label_wrap_gen(multi_line=FALSE)) +
-  coord_cartesian(ylim=c(.7, 1), xlim=c(.7, 1)) +
+  # facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T), scales = "free_y") +
+  facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T)) +
+  coord_cartesian(ylim=c(.4, 1), xlim=c(.4, 1)) +
+  # coord_cartesian(ylim=c(.7, 1), xlim=c(.7, 1)) +
+  # facet_grid(~h38+Subset.Rename, labeller = label_wrap_gen(multi_line=FALSE)) +
+  # coord_cartesian(ylim=c(.7, 1), xlim=c(.7, 1)) +
   # facet_wrap(h38~Subset.Rename, ncol = 6, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
   # facet_grid(h38~Subset.Rename, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
   scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
   ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
   theme(axis.title.x=element_text(vjust=0, hjust=0.45),
         axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
-        legend.position = "right", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+        legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.bwa.gatk.stratify
 
 if (save){
   # ggsave("figures/small_variants-bwa_dv-stratify-mixed-bar.pdf", fig_hg002_bwa_dv_stratify_bars, width=10, height=8)
   ggsave("figures/0309/small_variants-bwa_gatk-stratify-mixed-scatter-facet-fixed.pdf", 
-         fig.hg002.bwa.gatk.stratify + theme(legend.position = "none"), width=8, height=4)
+         fig.hg002.bwa.gatk.stratify
+         # + theme(legend.position = "none")
+         , width=8, height=10)
+  ggsave("figures/0309/small_variants-bwa_gatk-stratify-mixed-scatter-facet-fixed2.pdf", 
+         fig.hg002.bwa.gatk.stratify
+         # + theme(legend.position = "none")
+         , width=8, height=5)
 }
 
 ```
@@ -462,8 +530,10 @@ fig.hg002.hifi.dv <- ggplot(df.hg002.hifi.dv.melt, aes(x=variable, y=value, fill
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.hifi.dv 
 
-df.hg002.hifi.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
-df.hg002.hifi.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err=sum(Err))
+print(xtable(df.hg002.hifi.dv %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% select(name, Type, metric_orig), digits=4), include.rownames=FALSE)
+df.hg002.hifi.dv %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+df.hg002.hifi.dv %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err=sum(Err)) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
+df.hg002.hifi.dv %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(TRUTH.TP=sum(TRUTH.TP), TRUTH.FN=sum(TRUTH.FN), QUERY.FP=sum(QUERY.FP), Precision = TRUTH.TP / (TRUTH.TP + QUERY.FP), Recall = TRUTH.TP / (TRUTH.TP + TRUTH.FN), F1 = 2 * Precision * Recall / (Precision + Recall)) %>% select(name, Precision, Recall, F1)
 
 if (save){
   ggsave("figures/0309/small_variants-pacbio.pdf", fig.hg002.hifi.dv+theme(legend.position = "none"), width=5, height=5)
@@ -489,8 +559,14 @@ fig.hg002.hifi.dv.cmrg <- ggplot(df.hg002.hifi.dv.cmrg.melt, aes(x=variable, y=v
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.hifi.dv.cmrg 
 
-df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
-df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err=sum(Err))
+# df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+# df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err=sum(Err))
+
+print(xtable(df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% select(name, Type, metric_orig), digits=4), include.rownames=FALSE)
+df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err)
+df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err=sum(Err)) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
+df.hg002.hifi.dv.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(TRUTH.TP=sum(TRUTH.TP), TRUTH.FN=sum(TRUTH.FN), QUERY.FP=sum(QUERY.FP), Precision = TRUTH.TP / (TRUTH.TP + QUERY.FP), Recall = TRUTH.TP / (TRUTH.TP + TRUTH.FN), F1 = 2 * Precision * Recall / (Precision + Recall)) %>% select(name, Precision, Recall, F1)
+
 
 if (save){
   ggsave("figures/0309/small_variants-pacbio-cmrg.pdf", fig.hg002.hifi.dv.cmrg+theme(legend.position = "none"), width=5, height=5)
@@ -514,8 +590,11 @@ fig.hg002.hifi.sv.h37 <- ggplot(df.hg002.hifi.sv.h37.melt, aes(x=variable, y=val
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.hifi.sv.h37 
 
-df.hg002.hifi.sv.h37 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err)
-df.hg002.hifi.sv.h37 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err) %>% group_by(name) %>% summarise(Err=sum(Err))
+print(xtable(df.hg002.hifi.sv.h37 %>% select(name, recall, precision, f1, TP.call, FN, FP), digits=4), include.rownames=FALSE)
+df.hg002.hifi.sv.h37 %>% select(name, recall, precision, f1, TP.call, FN, FP)
+# df.hg002.hifi.sv.h37 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err) %>% group_by(name) %>% summarise(Err=sum(Err))
+df.hg002.hifi.sv.h37 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
+
 
 if (save){
   ggsave("figures/0309/SV-pacbio-h37.pdf", fig.hg002.hifi.sv.h37+theme(legend.position = "none"), width=3, height=5)
@@ -536,8 +615,10 @@ fig.hg002.hifi.sv.h38 <- ggplot(df.hg002.hifi.sv.h38.melt, aes(x=variable, y=val
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "right", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.hifi.sv.h38 
 
+print(xtable(df.hg002.hifi.sv.h38 %>% select(name, recall, precision, f1, TP.call, FN, FP), digits=4), include.rownames=FALSE)
 df.hg002.hifi.sv.h38 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err)
-df.hg002.hifi.sv.h38 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err) %>% group_by(name) %>% summarise(Err=sum(Err))
+# df.hg002.hifi.sv.h38 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err) %>% group_by(name) %>% summarise(Err=sum(Err))
+df.hg002.hifi.sv.h38 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38)
 
 if (save){
   ggsave("figures/0309/SV-pacbio-h38.pdf", fig.hg002.hifi.sv.h38+theme(legend.position = "none"), width=3, height=5)
