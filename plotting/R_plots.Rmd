@@ -314,6 +314,7 @@ fig.sim.summary
 
 if (save){
   ggsave("figures/sim_summary.pdf", fig.sim.summary, width=9, height=4)
+  ggsave("figures/sim_summary.pdf", fig.sim.summary + theme(legend.position = "right"), width=12, height=4)
 }
 ```
 
@@ -625,6 +626,32 @@ if (save){
   ggsave("figures/efficiency_core.pdf", fig.comp_eff.core.liftover, width=4, height=5)
   ggsave("figures/efficiency_core_with_fastremap.pdf", fig.comp_eff.core.liftover, width=10, height=3)
 }
+```
+
+```{r lift_scaling}
+dat.lift.scaling <- read.delim("csvs/leviosam2_lift-scaling.tsv", header = TRUE, sep = "\t")
+# colnames(dat.lift.scaling) <- c("Task", "Usr Time (s)", "System Time (s)", "CPU Time (s)", "Wall Time (s)", "Peak Memory Usage (MB)", "Threads")
+dat.lift.scaling <- dat.lift.scaling %>% filter(Method <= 16)
+
+dat.lift.scaling$Max.RSS..MB. <- round(dat.lift.scaling$Max.RSS..KB. / 1024)
+dat.lift.scaling.melt <- melt(dat.lift.scaling, id = "Method") %>% filter(variable %in% c("Wall.time..s.", "Max.RSS..MB.")) 
+dat.lift.scaling.melt$variable <- recode(dat.lift.scaling.melt$variable, Wall.time..s. = "Wall Time (s)", Max.RSS..MB. = "Peak Memory Usage (MB)")
+
+dat.lift.scaling.melt$value <-  sapply(dat.lift.scaling.melt$value, as.numeric)
+dat.lift.scaling.melt$Method <-  sapply(dat.lift.scaling.melt$Method, as.character)
+dat.lift.scaling.melt$Method = factor(dat.lift.scaling.melt$Method, levels=dat.lift.scaling.melt$Method[1:(nrow(dat.lift.scaling.melt)/2)])
+                                        # c("1", "2", "4", "8", "12", "16", "32"))
+
+fig.comp_eff.core.liftover <- ggplot(dat.lift.scaling.melt) + 
+  geom_col(stat="identity", position="stack", aes(x=Method, y=value), width = 0.5) + 
+  ylab("") + xlab("") + theme_bw() +
+  guides(fill = guide_legend(nrow = 1)) + 
+  facet_wrap(~variable, scales = "free", nrow = 2) +
+  theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+# + scale_colour_manual(values=cbPalette) + scale_fill_manual(values=cbPalette)
+fig.comp_eff.core.liftover
+
+
 ```
 
 
