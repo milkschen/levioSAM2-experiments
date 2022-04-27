@@ -306,15 +306,16 @@ dat.sim.summary$Method <- factor(dat.sim.summary$Method, levels = levelnames)
 
 fig.sim.summary <- ggplot(dat.sim.summary, aes(x = Method, y = Acc, fill = Method)) + 
   geom_bar(stat = "identity") + 
-  facet_grid(~chr+Aligner, labeller=label_wrap_gen(multi_line = FALSE)) +
+  # facet_grid(~chr+Aligner, labeller=label_wrap_gen(multi_line = FALSE)) +
+  facet_wrap(~chr+Aligner, labeller=label_wrap_gen(multi_line = FALSE), ncol=2) +
   scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#FC4E07", "#00AFBB")) +
   ylab("Correctness") + xlab("") + 
   theme_bw() + coord_cartesian(ylim=c(0.96,1)) + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.sim.summary
 
 if (save){
-  ggsave("figures/sim_summary.pdf", fig.sim.summary, width=9, height=4)
-  ggsave("figures/sim_summary.pdf", fig.sim.summary + theme(legend.position = "right"), width=12, height=4)
+  ggsave("figures/sim_summary.pdf", fig.sim.summary, width=6, height=6)
+  ggsave("figures/sim_summary_right.pdf", fig.sim.summary + theme(legend.position = "right"), width=12, height=4)
 }
 ```
 
@@ -595,7 +596,7 @@ dat.comp_eff.bwa$Task = factor(hash::values(map_task, keys=dat.comp_eff.bwa$Task
 fig.comp_eff.bwa.speed <- ggplot(dat.comp_eff.bwa, aes(x=Method, y=CPU.time..s./3600, fill = Task, color = Task)) + geom_bar(stat="identity", position=position_stack(), width = 0.5) + ylab("CPU Time (hr)") + xlab("") + theme_bw() + theme(legend.position = "bottom") + scale_colour_manual(values=cbPalette) + scale_fill_manual(values=cbPalette) + guides(color = guide_legend(nrow = 1), fill = guide_legend(nrow = 1))
 fig.comp_eff.bwa.speed 
 
-fig.comp_eff.bwa.memory <- ggplot(dat.comp_eff.bwa, aes(x=Method, y=Max.RSS..KB./1e6, fill = Task)) + geom_bar(stat="identity", position=position_dodge2(preserve = "single")) + ylab("Peak Memeory Usage (GB)") + xlab("") + theme_bw() + theme(legend.position = "bottom") + scale_colour_manual(values=cbPalette) + scale_fill_manual(values=cbPalette) + guides(color = guide_legend(nrow = 1), fill = guide_legend(nrow = 1))
+fig.comp_eff.bwa.memory <- ggplot(dat.comp_eff.bwa, aes(x=Method, y=Max.RSS..KB./1e6, fill = Task)) + geom_bar(stat="identity", position=position_dodge2(preserve = "single")) + ylab("Peak Memory Usage (GB)") + xlab("") + theme_bw() + theme(legend.position = "bottom") + scale_colour_manual(values=cbPalette) + scale_fill_manual(values=cbPalette) + guides(color = guide_legend(nrow = 1), fill = guide_legend(nrow = 1))
 fig.comp_eff.bwa.memory
 
 if (save){
@@ -631,7 +632,7 @@ if (save){
 ```{r lift_scaling}
 dat.lift.scaling <- read.delim("csvs/leviosam2_lift-scaling.tsv", header = TRUE, sep = "\t")
 # colnames(dat.lift.scaling) <- c("Task", "Usr Time (s)", "System Time (s)", "CPU Time (s)", "Wall Time (s)", "Peak Memory Usage (MB)", "Threads")
-dat.lift.scaling <- dat.lift.scaling %>% filter(Method <= 16)
+dat.lift.scaling <- dat.lift.scaling %>% filter(Method <= 6)
 
 dat.lift.scaling$Max.RSS..MB. <- round(dat.lift.scaling$Max.RSS..KB. / 1024)
 dat.lift.scaling.melt <- melt(dat.lift.scaling, id = "Method") %>% filter(variable %in% c("Wall.time..s.", "Max.RSS..MB.")) 
@@ -642,16 +643,18 @@ dat.lift.scaling.melt$Method <-  sapply(dat.lift.scaling.melt$Method, as.charact
 dat.lift.scaling.melt$Method = factor(dat.lift.scaling.melt$Method, levels=dat.lift.scaling.melt$Method[1:(nrow(dat.lift.scaling.melt)/2)])
                                         # c("1", "2", "4", "8", "12", "16", "32"))
 
-fig.comp_eff.core.liftover <- ggplot(dat.lift.scaling.melt) + 
+fig.lift.scaling <- ggplot(dat.lift.scaling.melt) + 
   geom_col(stat="identity", position="stack", aes(x=Method, y=value), width = 0.5) + 
   ylab("") + xlab("") + theme_bw() +
   guides(fill = guide_legend(nrow = 1)) + 
   facet_wrap(~variable, scales = "free", nrow = 2) +
   theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 # + scale_colour_manual(values=cbPalette) + scale_fill_manual(values=cbPalette)
-fig.comp_eff.core.liftover
+fig.lift.scaling
 
-
+if (save){
+  ggsave("figures/lift_scaling.pdf", fig.lift.scaling, width=4, height=5)
+}
 ```
 
 

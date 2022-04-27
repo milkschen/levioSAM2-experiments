@@ -34,13 +34,13 @@ chm13v2.called.unliftable.q30 <- toGRanges("chm13v2/unliftable/HG002-bwa-chm13_t
 # pp$data2outmargin <- 1
 # pp$topmargin <- 450
 
-# pdf("figures/variants-chm13_unique-q30.pdf", width = 10, height = 9)
+pdf("figures/variants-chm13_unique-q30.pdf", width = 10, height = 6)
 kp <- plotKaryotype(genome = chm13v2.genome, plot.type=2)#, chromosomes = "chr20")#, plot.params=pp)
 kpPlotRegions(kp, data=chm13v2.unliftable, col="deepskyblue", layer.margin = 0.05, border=NA)
 kpPlotRegions(kp, data=chm13v2.called.unliftable.q30, col="red", layer.margin = 0.05, border=NA, data.panel=2)
 # kpPlotRegions(kp, data=chm13v2.called.unliftable.q30, col="gold", layer.margin = 0.1, border=NA, data.panel=2, r0=0, r1=0.55)
 # kpPlotRegions(kp, data=chm13v2.unliftable, col="#AACCFF", border="#FFCCAA", r0=0.3, r1=0.55)
-# dev.off()
+dev.off()
 ```
 
 ```{r load.hg001.error.hotspots}

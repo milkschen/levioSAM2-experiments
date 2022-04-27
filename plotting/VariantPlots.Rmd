@@ -210,7 +210,8 @@ df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mu
 df_hg002_bwa_dv_cmrg %>% filter(Filter == "PASS") %>% arrange(desc(Type)) %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
 
 if (save){
-  ggsave("figures/0309/small_variants-bwa_dv-cmrg.pdf", fig_hg002_bwa_dv_cmrg, width=5, height=5)
+  ggsave("figures/0309/small_variants-bwa_dv-cmrg.pdf", fig_hg002_bwa_dv_cmrg, width=7, height=4)
+  # ggsave("figures/0309/small_variants-bwa_dv-cmrg.pdf", fig_hg002_bwa_dv_cmrg, width=5, height=5)
 }
 ```
 
@@ -235,7 +236,8 @@ df.hg002.bwa.gatk.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + 
 df.hg002.bwa.gatk.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + QUERY.FP) %>% select(name, Type, metric_orig, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38, h37.diff = (GRCh37 - `CHM13-to-GRCh37`), h37.reduction = h37.diff/GRCh37)
 
 if (save){
-  ggsave("figures/0309/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=5, height=5)
+  ggsave("figures/0309/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=7, height=4)
+  # ggsave("figures/0309/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=5, height=5)
 }
 ```
 
@@ -597,7 +599,8 @@ df.hg002.hifi.sv.h37 %>% mutate(Err = FN + FP) %>% select(name, recall, precisio
 
 
 if (save){
-  ggsave("figures/0309/SV-pacbio-h37.pdf", fig.hg002.hifi.sv.h37+theme(legend.position = "none"), width=3, height=5)
+  # ggsave("figures/0309/SV-pacbio-h37.pdf", fig.hg002.hifi.sv.h37+theme(legend.position = "none"), width=3, height=5)
+  ggsave("figures/0309/SV-pacbio-h37.pdf", fig.hg002.hifi.sv.h37+theme(legend.position = "none"), width=3, height=3)
 }
 ```
 
@@ -621,7 +624,8 @@ df.hg002.hifi.sv.h38 %>% mutate(Err = FN + FP) %>% select(name, recall, precisio
 df.hg002.hifi.sv.h38 %>% mutate(Err = FN + FP) %>% select(name, recall, precision, f1, Err) %>% group_by(name) %>% summarise(Err = sum(Err)) %>% spread(name, Err) %>% mutate(h38.diff = (GRCh38 - `CHM13-to-GRCh38`), h38.reduction = h38.diff/GRCh38)
 
 if (save){
-  ggsave("figures/0309/SV-pacbio-h38.pdf", fig.hg002.hifi.sv.h38+theme(legend.position = "none"), width=3, height=5)
+  # ggsave("figures/0309/SV-pacbio-h38.pdf", fig.hg002.hifi.sv.h38+theme(legend.position = "none"), width=3, height=5)
+  ggsave("figures/0309/SV-pacbio-h38.pdf", fig.hg002.hifi.sv.h38+theme(legend.position = "none"), width=4, height=4)
 }
 ```
 
