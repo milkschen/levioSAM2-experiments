@@ -64,6 +64,8 @@ metric_sv_names <- c("Recall", "Precision", "F1", "TP", "FN", "FP")
 map_metrics_sv <- hash()
 for (i in seq(1, length(metric_sv_orig))){
   map_metrics[[metric_sv_orig[i]]] <- metric_sv_names[i]}
+
+scale_3digits <- function(x) sprintf("%.3f", x)
 ```
 
 ```{r small_variant_wgs_dv, message=FALSE}
@@ -89,7 +91,8 @@ fig.bwa.dv.f1 <- ggplot(df.bwa.dv.melt, aes(x=variable, y=value, fill=name)) +
     scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
     facet_grid(GrcSystem~Type+Sample) +
     # facet_grid(Type~.) +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.99,1)) +
+    ylab("F1") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.99,1)) +
+    scale_y_continuous(labels=scale_3digits) +
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.bwa.dv.f1
 
@@ -114,17 +117,43 @@ fig.bwa.dv.scatter
 
 if (save){
   ggsave("figures/0309/small_variants-bwa_dv-f1.pdf", fig.bwa.dv.f1
-         + theme(legend.position = "none")
-         , width=4, height=4)
+         + theme(legend.position = "none"),
+         width=4, height=4)
+  ggsave("figures/1124_revision/small_variants-bwa_dv-f1.pdf", fig.bwa.dv.f1
+         + theme(legend.position = "none"),
+         width=4, height=4)
   ggsave("figures/0309/small_variants-bwa_dv-scatter.pdf", fig.bwa.dv.scatter
-         + theme(legend.position = "none")
-         , width=8, height=4)
+         + theme(legend.position = "none"),
+         width=8, height=4)
   # write.csv(
   #   df.bwa.dv %>% filter(Filter=="PASS") %>% select(name, Type, Sample, TRUTH.TP, TRUTH.FN, QUERY.FP, METRIC.Recall, METRIC.Precision, METRIC.F1_Score),
   #   "csvs/small_variants-bwa_dv.csv", row.names = FALSE)
 
 }
 ```
+
+```{r small_variant_wgs_dv_hg2, message=FALSE}
+ggplot(df.bwa.dv.melt %>% filter(Sample=="HG002"), aes(x=variable, y=value, fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+    facet_grid(GrcSystem~Type+Sample) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.99,1)) +
+    scale_y_continuous(labels=scale_3digits) +
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+
+ggplot(df.bwa.dv %>% filter(Sample=="HG002"), aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
+  geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.055, "inches"))) +
+  geom_point() + 
+  facet_grid(~GrcSystem+Sample, labeller = label_wrap_gen(multi_line=FALSE)) +
+  scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+  coord_cartesian(ylim=c(0.986,1), xlim=c(0.986,1)) +
+  ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
+  theme(axis.title.x=element_text(vjust=0, hjust=0.45),
+        axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
+        legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+```
+
 
 ```{r small_variant_wgs_gatk, message=FALSE}
 df.hg001.bwa.gatk <- do.call(rbind, lapply(c("chm13v2-gatk/hg001/grch38.summary.csv", "chm13v2-gatk/hg001/chm13_to_grch38.summary.csv", "chm13v2-gatk/hg001/hg19.summary.csv", "chm13v2-gatk/hg001/chm13_to_hg19.summary.csv"), read_csv, map=map_caller_name))
@@ -150,7 +179,7 @@ fig.bwa.gatk.f1 <- ggplot(df.bwa.gatk.melt, aes(x=variable, y=value, fill=name))
     scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
     facet_grid(GrcSystem~Type+Sample) +
     # facet_grid(Type~.) +
-    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.98,1)) +
+    ylab("F1") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.98,1)) +
     theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.bwa.gatk.f1
 
@@ -176,11 +205,14 @@ fig.bwa.gatk.scatter
 
 if (save){
   ggsave("figures/0309/small_variants-bwa_gatk-f1.pdf", fig.bwa.gatk.f1
-         + theme(legend.position = "none")
-         , width=4, height=4)
+         + theme(legend.position = "none"),
+         width=4, height=4)
+  ggsave("figures/1124_revision/small_variants-bwa_gatk-f1.pdf", fig.bwa.gatk.f1
+         + theme(legend.position = "none"),
+         width=4, height=4)
   ggsave("figures/0309/small_variants-bwa_gatk-scatter.pdf", fig.bwa.gatk.scatter
-         + theme(legend.position = "none")
-         , width=8, height=4)
+         + theme(legend.position = "none"),
+         width=8, height=4)
   # write.csv(
   #   df.bwa.dv %>% filter(Filter=="PASS") %>% select(name, Type, Sample, TRUTH.TP, TRUTH.FN, QUERY.FP, METRIC.Recall, METRIC.Precision, METRIC.F1_Score),
   #   "csvs/small_variants-bwa_dv.csv", row.names = FALSE)
@@ -188,6 +220,26 @@ if (save){
 }
 ```
 
+```{r small_variant_wgs_gatk_hg2, message=FALSE}
+ggplot(df.bwa.gatk.melt %>% filter(Sample=="HG002"), aes(x=variable, y=value, fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) +
+    scale_fill_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+    facet_grid(GrcSystem~Type+Sample) +
+    # facet_grid(Type~.) +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + coord_cartesian(ylim=c(0.98,1)) +
+    theme(axis.title.x=element_text(vjust=0, hjust=0.45), legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+
+ggplot(df.bwa.gatk %>% filter(Sample=="HG002"), aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) + 
+  geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.055, "inches"))) +
+  geom_point() + 
+  facet_grid(~GrcSystem+Sample, labeller = label_wrap_gen(multi_line=FALSE)) +
+  scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
+  coord_cartesian(ylim=c(0.975,1), xlim=c(0.975,1)) +
+  ylab("Recall") + xlab("Precision") + labs(color="Method") + theme_bw() +
+  theme(axis.title.x=element_text(vjust=0, hjust=0.45),
+        axis.text.x = element_text(angle = 90, vjust = 1, hjust=0.8),
+        legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+```
 
 ```{r small_variant_wgs_dv_cmrg_hg002}
 df_hg002_bwa_dv_cmrg <- do.call(rbind, lapply(c("chm13v2/hg002/cmrg/grch38.summary.csv", "chm13v2/hg002/cmrg/chm13_to_grch38.summary.csv", "chm13v2/hg002/cmrg/grch37.summary.csv", "chm13v2/hg002/cmrg/chm13_to_grch37.summary.csv"), read_csv, map=map_caller_name))
@@ -237,6 +289,7 @@ df.hg002.bwa.gatk.cmrg %>% filter(Filter == "PASS") %>% mutate(Err = TRUTH.FN + 
 
 if (save){
   ggsave("figures/0309/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=7, height=4)
+  ggsave("figures/0505/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=5, height=3)
   # ggsave("figures/0309/small_variants-bwa_gatk-cmrg.pdf", fig.hg002.bwa.gatk.cmrg, width=5, height=5)
 }
 ```
@@ -307,12 +360,12 @@ df.hg002.bwa.dv.stratify_leviosam <- df.hg002.bwa.dv.stratify_leviosam %>% mutat
 
 df.hg002.bwa.dv.stratify <- rbind(df.hg002.bwa.dv.stratify_grc, df.hg002.bwa.dv.stratify_leviosam)
 
-dat.hg002.small.var.stratify.grc.topdiff.melt.h37 <- melt(rbind(df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity > 1) %>% top_n(topdiff_n), df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, name))
-dat.hg002.small.var.stratify.grc.topdiff.melt.h37$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt.h37 %>% filter(variable == "ErrDiffDensity"))$value, 2)
+dat.hg002.small.var.stratify.grc.topdiff.melt.h37 <- melt(rbind(df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity > 1) %>% top_n(topdiff_n), df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh37", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, ErrDiff, name))
+dat.hg002.small.var.stratify.grc.topdiff.melt.h37$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt.h37 %>% filter(variable == "ErrDiffDensity"))$value, 3)
 dat.hg002.small.var.stratify.grc.topdiff.melt.h37$variable <- factor(
   dat.hg002.small.var.stratify.grc.topdiff.melt.h37$variable,
-  levels = c("ErrDiffDensity", "ConfSubsetSize_Mbp"),
-  labels = c("#Error Diff Per Mbp", "SubSetSize (Mbp)"))
+  levels = c("ErrDiffDensity", "ConfSubsetSize_Mbp", "ErrDiff"),
+  labels = c("#Error Diff Per Mbp", "SubSetSize (Mbp)", "#Error Diff"))
 fig_hg002_stratify_topdiff_h37 <- ggplot(dat.hg002.small.var.stratify.grc.topdiff.melt.h37, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
     geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[3]) +
     facet_grid(~variable, scales = "free") +
@@ -321,12 +374,12 @@ fig_hg002_stratify_topdiff_h37
 
 dat.hg002.small.var.stratify.grc.topdiff.melt.h38 <- melt(
   rbind(df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh38", ErrDiffDensity > 1) %>% top_n(topdiff_n), 
-        df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh38", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, name))
-dat.hg002.small.var.stratify.grc.topdiff.melt.h38$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt.h38 %>% filter(variable == "ErrDiffDensity"))$value, 2)
+        df.hg002.bwa.dv.stratify_grc %>% filter(name == "GRCh38", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, ErrDiff, name))
+dat.hg002.small.var.stratify.grc.topdiff.melt.h38$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt.h38 %>% filter(variable == "ErrDiffDensity"))$value, 3)
 dat.hg002.small.var.stratify.grc.topdiff.melt.h38$variable <- factor(
   dat.hg002.small.var.stratify.grc.topdiff.melt.h38$variable,
-  levels = c("ErrDiffDensity", "ConfSubsetSize_Mbp"),
-  labels = c("#Error Diff Per Mbp", "SubSetSize (Mbp)"))
+  levels = c("ErrDiffDensity", "ConfSubsetSize_Mbp", "ErrDiff"),
+  labels = c("#Error Diff Per Mbp", "SubSetSize (Mbp)", "#Error Diff"))
 fig_hg002_stratify_topdiff_h38 <- ggplot(dat.hg002.small.var.stratify.grc.topdiff.melt.h38, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
     geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[1]) +
     facet_grid(~variable, scales = "free") +
@@ -336,7 +389,7 @@ fig_hg002_stratify_topdiff_h38
 dat.hg002.small.var.stratify.grc.topdiff.melt <- rbind(dat.hg002.small.var.stratify.grc.topdiff.melt.h37, dat.hg002.small.var.stratify.grc.topdiff.melt.h38)
 # dat.hg002.small.var.stratify.grc.topdiff.melt$reorder <- rep(c(dat.hg002.small.var.stratify.grc.topdiff.melt %>% filter(variable == "#Error Diff Per Mbp"))$value, 2)
 fig_hg002_stratify_topdiff <- ggplot(dat.hg002.small.var.stratify.grc.topdiff.melt, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
-    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = c(color_codes[1], color_codes[3])) +
+    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = c(color_codes[3], color_codes[1])) +
     facet_grid(name~variable, scales = "free") +
     ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig_hg002_stratify_topdiff
@@ -345,6 +398,8 @@ if (save){
   ggsave("figures/0309/supp/small_variants-bwa_dv-stratify-topdiff.pdf", fig_hg002_stratify_topdiff, width=6, height=6)
   ggsave("figures/0309/supp/small_variants-bwa_dv-stratify-topdiff-h37.pdf", fig_hg002_stratify_topdiff_h37, width=6, height=5)
   ggsave("figures/0309/supp/small_variants-bwa_dv-stratify-topdiff-h38.pdf", fig_hg002_stratify_topdiff_h38, width=6, height=5)
+  
+  ggsave("figures/1124_revision/supp/small_variants-bwa_dv-stratify-topdiff.pdf", fig_hg002_stratify_topdiff, width=8, height=3.5)
 }
 ```
 
@@ -372,11 +427,9 @@ df.hg002.bwa.dv.stratify.no.tandem.gc <- df.hg002.bwa.dv.stratify %>% filter(!Su
 fig.hg002.bwa.dv.stratify.scatter <- ggplot(df.hg002.bwa.dv.stratify.no.tandem.gc, aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
   geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.075, "inches"))) +
   geom_point() + 
-  facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T)) +
-  # coord_cartesian(ylim=c(.85,1), xlim=c(0.85, 1)) +
-  coord_cartesian(ylim=c(.6,1), xlim=c(0.6, 1)) +
-  # facet_grid(~h38+Subset.Rename, labeller = label_wrap_gen(multi_line=FALSE)) +
-  # coord_cartesian(ylim=c(.84,1), xlim=c(0.84, 1)) +
+  facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T), scales = "free_y") +
+  coord_cartesian(ylim=c(NA,1), xlim=c(NA, 1)) +
+  # coord_cartesian(ylim=c(.6,1), xlim=c(0.6, 1)) +
   # facet_wrap(h38~Subset.Rename, ncol = 6, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
   # facet_grid(h38~Subset.Rename, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
   scale_color_manual(values = c("#FC4E07", "#00AFBB", "#E7B800", "#52854C")) +
@@ -392,6 +445,9 @@ if (save){
          , width=8, height=5)
          # + theme(legend.position = "none")
          # , width=8, height=10)
+  ggsave("figures/1124_revision/supp/small_variants-bwa_dv-stratify-mixed-scatter-facet-fixed.pdf", 
+         fig.hg002.bwa.dv.stratify.scatter
+         , width=8, height=5)
 }
 
 ```
@@ -441,15 +497,55 @@ fig.hg002.bwa.gatk.stratify.grc.topdiff.h38
 
  
 fig.hg002.bwa.gatk.stratify.grc.topdiff <- ggplot(rbind(dat.hg002.bwa.gatk.stratify.grc.topdiff.h37, dat.hg002.bwa.gatk.stratify.grc.topdiff.h38), aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
-    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = c(color_codes[1], color_codes[3])) +
+    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = c(color_codes[3], color_codes[1])) +
     facet_grid(name~variable, scales = "free") +
     ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
 fig.hg002.bwa.gatk.stratify.grc.topdiff
 
 if (save){
   ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff, width=6, height=6)
-  ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h37.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h37, width=6, height=5)
-  ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h38.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h38, width=6, height=5)
+  # ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h37.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h37, width=6, height=5)
+  # ggsave("figures/0309/small_variants-bwa_gatk-stratify-topdiff-h38.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h38, width=6, height=5)
+}
+```
+
+```{r small_variant_wgs_gatk_top_strata_hg002_with_errdiff}
+dat.hg002.bwa.gatk.stratify.grc.topdiff.h37 <- melt(rbind(df.hg002.bwa.gatk.stratify.grc %>% filter(name == "GRCh37", ErrDiffDensity > 1) %>% top_n(topdiff_n), df.hg002.bwa.gatk.stratify.grc %>% filter(name == "GRCh37", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, ErrDiff, name))
+dat.hg002.bwa.gatk.stratify.grc.topdiff.h37$reorder <- rep(c(dat.hg002.bwa.gatk.stratify.grc.topdiff.h37 %>% filter(variable == "ErrDiffDensity"))$value, 3)
+dat.hg002.bwa.gatk.stratify.grc.topdiff.h37$variable <- factor(
+  dat.hg002.bwa.gatk.stratify.grc.topdiff.h37$variable,
+  levels = c("ErrDiffDensity", "ConfSubsetSize_Mbp", "ErrDiff"),
+  labels = c("#Error Diff Per Mbp", "SubSetSize (Mbp)", "#Error Diff"))
+fig.hg002.bwa.gatk.stratify.grc.topdiff.h37 <- ggplot(dat.hg002.bwa.gatk.stratify.grc.topdiff.h37, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[3]) +
+    facet_grid(~variable, scales = "free") +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.hg002.bwa.gatk.stratify.grc.topdiff.h37
+
+dat.hg002.bwa.gatk.stratify.grc.topdiff.h38 <- melt(
+  rbind(df.hg002.bwa.gatk.stratify.grc %>% filter(name == "GRCh38", ErrDiffDensity > 1) %>% top_n(topdiff_n), 
+        df.hg002.bwa.gatk.stratify.grc %>% filter(name == "GRCh38", ErrDiffDensity < -1) %>% top_n(-topdiff_n)) %>% select(Type, Subtype, Subset.Rename, ConfSubsetSize_Mbp, ErrDiffDensity, ErrDiff, name))
+dat.hg002.bwa.gatk.stratify.grc.topdiff.h38$reorder <- rep(c(dat.hg002.bwa.gatk.stratify.grc.topdiff.h38 %>% filter(variable == "ErrDiffDensity"))$value, 3)
+dat.hg002.bwa.gatk.stratify.grc.topdiff.h38$variable <- factor(
+  dat.hg002.bwa.gatk.stratify.grc.topdiff.h38$variable,
+  levels = c("ErrDiffDensity", "ConfSubsetSize_Mbp", "ErrDiff"),
+  labels = c("#Error Diff Per Mbp", "SubSetSize (Mbp)", "#Error Diff"))
+fig.hg002.bwa.gatk.stratify.grc.topdiff.h38 <- ggplot(dat.hg002.bwa.gatk.stratify.grc.topdiff.h38, aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = color_codes[1]) +
+    facet_grid(~variable, scales = "free") +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "bottom", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.hg002.bwa.gatk.stratify.grc.topdiff.h38
+
+fig.hg002.bwa.gatk.stratify.grc.topdiff <- ggplot(rbind(dat.hg002.bwa.gatk.stratify.grc.topdiff.h37, dat.hg002.bwa.gatk.stratify.grc.topdiff.h38), aes(x=value, y=reorder(Subset.Rename, reorder), fill=name)) + 
+    geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values = c(color_codes[3], color_codes[1])) +
+    facet_grid(name~variable, scales = "free") +
+    ylab("") + xlab("") + labs(fill="Method") + theme_bw() + theme(legend.position = "none", strip.background = element_rect(color="white", fill="white", size=0.5, linetype="solid"), strip.text = element_text(face="bold"))
+fig.hg002.bwa.gatk.stratify.grc.topdiff
+
+if (save){
+  ggsave("figures/1124_revision/small_variants-bwa_gatk-stratify-topdiff-h37.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h37, width=6, height=5)
+  ggsave("figures/1124_revision/small_variants-bwa_gatk-stratify-topdiff-h38.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff.h38, width=6, height=5)
+  ggsave("figures/1124_revision/small_variants-bwa_gatk-stratify-topdiff.pdf", fig.hg002.bwa.gatk.stratify.grc.topdiff, width=8, height=3.5)
 }
 ```
 
@@ -482,10 +578,10 @@ fig.hg002.bwa.gatk.stratify <- ggplot(
   # df.hg002.bwa.gatk.stratify %>% filter(Subset.Rename != "OtherDifficult"), aes(y=METRIC.Recall, x=METRIC.Precision, color=name, shape=Type)) +
   geom_path(aes(group = pair), color="#999999", arrow = arrow(length=unit(0.075, "inches"))) +
   geom_point() + 
-  # facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T), scales = "free_y") +
-  facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T)) +
-  coord_cartesian(ylim=c(.4, 1), xlim=c(.4, 1)) +
-  # coord_cartesian(ylim=c(.7, 1), xlim=c(.7, 1)) +
+  facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T), scales = "free_y") +
+  # facet_grid(h38~Subset.Rename, labeller = label_wrap_gen(multi_line=T)) +
+  # coord_cartesian(ylim=c(.4, 1), xlim=c(.4, 1)) +
+  coord_cartesian(ylim=c(NA, 1), xlim=c(NA, 1)) +
   # facet_grid(~h38+Subset.Rename, labeller = label_wrap_gen(multi_line=FALSE)) +
   # coord_cartesian(ylim=c(.7, 1), xlim=c(.7, 1)) +
   # facet_wrap(h38~Subset.Rename, ncol = 6, scales = "free_y", labeller = label_wrap_gen(multi_line=FALSE)) +
@@ -504,6 +600,15 @@ if (save){
          # + theme(legend.position = "none")
          , width=8, height=10)
   ggsave("figures/0309/small_variants-bwa_gatk-stratify-mixed-scatter-facet-fixed2.pdf", 
+         fig.hg002.bwa.gatk.stratify
+         # + theme(legend.position = "none")
+         , width=8, height=5)
+  ggsave("figures/0505/small_variants-bwa_gatk-stratify-mixed-scatter-facet-fixed3.pdf", 
+         fig.hg002.bwa.gatk.stratify
+         + theme(legend.position = "none")
+         # + theme(legend.box="vertical")
+         , width=6, height=4)
+  ggsave("figures/1124_revision/small_variants-bwa_gatk-stratify-mixed-scatter-facet-fixed3.pdf", 
          fig.hg002.bwa.gatk.stratify
          # + theme(legend.position = "none")
          , width=8, height=5)
@@ -625,7 +730,7 @@ df.hg002.hifi.sv.h38 %>% mutate(Err = FN + FP) %>% select(name, recall, precisio
 
 if (save){
   # ggsave("figures/0309/SV-pacbio-h38.pdf", fig.hg002.hifi.sv.h38+theme(legend.position = "none"), width=3, height=5)
-  ggsave("figures/0309/SV-pacbio-h38.pdf", fig.hg002.hifi.sv.h38+theme(legend.position = "none"), width=4, height=4)
+  ggsave("figures/0309/SV-pacbio-h38.pdf", fig.hg002.hifi.sv.h38+theme(legend.position = "none"), width=3, height=3)
 }
 ```
 
