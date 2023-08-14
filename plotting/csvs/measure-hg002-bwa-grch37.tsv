@@ -1,0 +1,12 @@
+Task	User time (s)	System time (s)	CPU time (s)	Wall time (s)	Max RSS (KB)	Method
+bwa_mem	258840.66	1495.57	260336.23	8254.0	9531932	grch37
+samtools_sort	6049.9	356.12	6406.0199999999995	45412.0	5420568	grch37
+leviosam_lift	11699.98	13866.93	25566.91	3459.88	12045200	chm13_to_grch37
+leviosam_collate	6878.76	120.94	6999.7	7431.0	35326160	chm13_to_grch37
+bwa_mem	87496.73	523.78	88020.51	2546.15	14093856	chm13_to_grch37
+samtools_view	745.3	37.73	783.03	2546.28	20424	chm13_to_grch37
+samtools_sort	2255.36	54.77	2310.13	4036.0	31707816	chm13_to_grch37
+samtools_sort	2297.38	58.61	2355.9900000000002	4190.0	31649268	chm13_to_grch37
+leviosam_cherry_pick	1160.73	17.61	1178.34	1180.99	21208	chm13_to_grch37
+samtools_cat	0.41	45.77	46.18	344.71	3944	chm13_to_grch37
+samtools_sort	5499.38	151.78	5651.16	1603.75	32327552	chm13_to_grch37

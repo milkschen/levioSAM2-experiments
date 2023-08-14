@@ -1,0 +1,6 @@
+Task	User time (s)	System time (s)	CPU time (s)	Wall time (s)	Max RSS (KB)	Method
+FastRemap_bam	65.72	3.88	69.6	70.43	185568	FastRemap (1)
+leviosam_lift	59.83	1.67	61.5	62.87	65816	levioSAM2-lift (1)
+leviosam_lift	61.83	2.44	64.27	22.7	68012	levioSAM2-lift (4)
+FastRemap_bam	70.82	6.88	77.69999999999999	48.42	185608	FastRemap (4)
+CrossMap.py_bam	308.31	1.3	309.61	312.2	350116	CrossMap (1)

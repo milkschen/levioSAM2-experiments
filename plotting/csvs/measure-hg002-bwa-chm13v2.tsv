@@ -1,0 +1,3 @@
+Task	User time (s)	System time (s)	CPU time (s)	Wall time (s)	Max RSS (KB)	Method
+bwa_mem	388223.2	2074.63	390297.83	12345.0	11738840	chm13
+samtools_sort	5092.85	210.92	5303.77	15561.0	917664	chm13
