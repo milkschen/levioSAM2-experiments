@@ -1,0 +1,2 @@
+TP-base,TP-call,FP,FN,precision,recall,f1,base cnt,call cnt,TP-call_TP-gt,TP-call_FP-gt,TP-base_TP-gt,TP-base_FP-gt,gt_precision,gt_recall,gt_f1
+ 9361, 9361, 728, 280, 0.9278422043810091, 0.9709573695674723, 0.948910288900152, 9641, 10089, 9077, 284, 9077, 284, 0.8996927346615126, 0.9700758790210537, 0.9335596009462
